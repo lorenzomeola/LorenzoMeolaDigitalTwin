@@ -1,0 +1,34 @@
+{
+  "name": "Lorenzo Meola",
+  "headline": "Automotive Engineer and Technical Analyst focused on AI Engineering",
+  "origin": "Colombia",
+  "location": "Belgium",
+  "education": [
+    {
+      "institution": "Politecnico di Torino",
+      "field": "Automotive Engineering",
+      "location": "Turin, Italy"
+    },
+    {
+      "institution": "MIA Digital University",
+      "field": "AI and Machine Learning",
+      "format": "Online master's degree"
+    }
+  ],
+  "careerGoal": "AI Engineer",
+  "professionalInterests": [
+    "AI engineering and practical applications of AI",
+    "Motorsport",
+    "Sports-car testing and design"
+  ],
+  "personalInterests": [
+    "Sport",
+    "Food",
+    "Travel",
+    "Cars and motorbikes",
+    "Family and friends"
+  ],
+  "links": {
+    "github": "https://github.com/lorenzomeola"
+  }
+}

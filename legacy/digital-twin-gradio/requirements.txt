@@ -1,0 +1,5 @@
+gradio
+pypdf
+openai
+python-dotenv
+supabase

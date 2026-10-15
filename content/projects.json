@@ -1,0 +1,108 @@
+[
+  {
+    "slug": "volvo-cca-fleet-analytics",
+    "title": "CCA Fleet Analytics & Predictive Maintenance",
+    "status": "Ongoing",
+    "summary": "Fleet analytics application combining vehicle diagnostics, repairs, and vehicle-use data to explore patterns and early-detection strategies for CCA-related repairs.",
+    "contribution": "Developed the analytical backend, REST API, data-visualization interface, alert-rule simulation and optimization, and a machine-learning module for training and evaluating predictive classifiers.",
+    "technology": [
+      "Python",
+      "FastAPI",
+      "Pandas",
+      "NumPy",
+      "SQL Server",
+      "SQLAlchemy",
+      "pyodbc",
+      "HTML",
+      "CSS",
+      "JavaScript",
+      "Plotly.js",
+      "scikit-learn"
+    ],
+    "evidence": [
+      "Code includes analytical views and REST endpoints for data queries and simulations.",
+      "Alert simulation supports DTC codes, thresholds, time windows, and configurable combination logic.",
+      "Optimization compares the trade-off between identifying repairs and limiting false alarms.",
+      "Exploratory classifiers include Random Forest, Gradient Boosting, and logistic regression.",
+      "No validated model-performance, breakdown-reduction, or cost-saving claims are available."
+    ],
+    "privacyNotes": [
+      "Do not publish real Volvo data, screenshots, or internal links.",
+      "Any public demo must use synthetic data.",
+      "No verified public project link is currently available."
+    ],
+    "links": []
+  },
+  {
+    "slug": "ai-assets-directory",
+    "title": "AI Assets Directory",
+    "status": "Live in production and actively maintained",
+    "summary": "Directory and learning hub for Claude Skills, MCP servers, GitHub Copilot agents, AI workflows, and Cursor Rules. The supplied project snapshot lists 170 entries across five categories; verify the count before displaying it as current.",
+    "contribution": "Exact personal contribution and role are pending confirmation. Describe verified product functionality without claiming sole ownership or founder status.",
+    "technology": [
+      "Next.js 16",
+      "React 19",
+      "TypeScript",
+      "Tailwind CSS 4",
+      "Velite",
+      "cmdk",
+      "next-themes",
+      "Lucide",
+      "Vercel Analytics",
+      "Upstash Redis",
+      "Vercel KV"
+    ],
+    "evidence": [
+      "Search and filters across listings by type, category, and tool.",
+      "Category and detail pages show source, license, compatibility, verification, and installation guidance where available.",
+      "Copyable installation blocks and Ctrl+K command palette.",
+      "Learning guides, blog, contributor submissions, upvotes, and email sign-ups."
+    ],
+    "privacyNotes": [],
+    "links": [
+      "https://aiassetsdirectory.com/",
+      "https://github.com/lorenzomeolav32-png/AI_assets_directory",
+      "https://aiassetsdirectory.com/learn",
+      "https://github.com/lorenzomeolav32-png/awesome-claude-skills-mcp-servers"
+    ]
+  },
+  {
+    "slug": "matchkeeper",
+    "title": "MatchKeeper | London Goalkeeper Marketplace",
+    "status": "Free-beta application deployed to staging and in release preparation",
+    "summary": "Full-stack marketplace connecting amateur football teams and players who need a goalkeeper with freelance goalkeepers available for matches in London.",
+    "contribution": "Sole creator and owner. Led the product concept, UX/UI design, technical architecture, and end-to-end development.",
+    "technology": [
+      "Next.js 16",
+      "React 19",
+      "TypeScript",
+      "Tailwind CSS 4",
+      "Floodlight design system",
+      "Supabase Postgres",
+      "Supabase Auth",
+      "Supabase Realtime",
+      "Supabase Storage",
+      "Mapbox",
+      "Resend",
+      "Vercel",
+      "Drizzle Kit",
+      "Stripe Connect (inactive paid-booking mode)"
+    ],
+    "evidence": [
+      "Player and goalkeeper dashboards, match creation and discovery, applications, and team selection.",
+      "Manually reviewed profiles, in-app chat, maps, calendars, check-in, reviews, match history, and admin moderation.",
+      "Supplied-account checks verified both dashboards and the player calendar on staging; these checks do not establish adoption or business impact.",
+      "Stripe Connect paid bookings are implemented and sandbox-tested but inactive; no real-money or production-payment verification is available."
+    ],
+    "privacyNotes": [
+      "Do not claim that MatchKeeper processes live payments.",
+      "Do not claim broader adoption or business impact without evidence.",
+      "The production domain currently serves an earlier validation landing page."
+    ],
+    "links": [
+      "https://staging.matchkeeperuk.com/home",
+      "https://github.com/lorenzomeolav32-png/MatchKeeper/tree/staging",
+      "https://matchkeeperuk.com"
+    ]
+  }
+]

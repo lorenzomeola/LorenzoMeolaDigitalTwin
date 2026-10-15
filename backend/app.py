@@ -1,0 +1,133 @@
+import logging
+import os
+import re
+from pathlib import Path
+from typing import Literal
+
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from openai import OpenAI
+from pydantic import BaseModel, Field, field_validator
+
+from backend.context import TWIN_SYSTEM_PROMPT
+from backend.tools import TOOLS, handle_tool_calls
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(PROJECT_ROOT / ".env")
+
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+logger = logging.getLogger(__name__)
+
+openai_client = OpenAI() if os.getenv("OPENAI_API_KEY") else None
+model_name = os.getenv("OPENAI_MODEL", "gpt-5.4-nano")
+email_pattern = re.compile(r"[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9-]+(?:\.[A-Z0-9-]+)+", re.I)
+
+app = FastAPI(title="Lorenzo Meola Digital Twin API", version="1.0.0")
+
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+    if origin.strip()
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
+
+
+class HistoryMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=4000)
+
+    @field_validator("content")
+    @classmethod
+    def content_must_not_be_blank(cls, value):
+        value = value.strip()
+        if not value:
+            raise ValueError("Message content cannot be blank")
+        return value
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=4000)
+    history: list[HistoryMessage] = Field(default_factory=list, max_length=20)
+    contactConsent: bool = False
+
+    @field_validator("message")
+    @classmethod
+    def message_must_not_be_blank(cls, value):
+        value = value.strip()
+        if not value:
+            raise ValueError("Message cannot be blank")
+        return value
+
+
+class ChatResponse(BaseModel):
+    reply: str
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.post("/api/chat", response_model=ChatResponse)
+def chat(request: ChatRequest):
+    if openai_client is None:
+        raise HTTPException(status_code=503, detail="The chat service is not configured")
+
+    messages = [
+        {"role": "system", "content": TWIN_SYSTEM_PROMPT},
+        *[message.model_dump() for message in request.history],
+        {"role": "user", "content": request.message},
+    ]
+    visitor_text = " ".join(
+        message["content"] for message in messages if message["role"] == "user"
+    )
+    visitor_emails = set(email_pattern.findall(visitor_text))
+    available_tools = TOOLS if request.contactConsent and visitor_emails else []
+
+    try:
+        response = openai_client.chat.completions.create(
+            model=model_name,
+            messages=messages,
+            tools=available_tools,
+        )
+        tool_rounds = 0
+        while response.choices[0].finish_reason == "tool_calls":
+            if not request.contactConsent or tool_rounds >= 3:
+                raise RuntimeError("Tool call is not allowed or exceeded the limit")
+
+            assistant_message = response.choices[0].message
+            messages.append(assistant_message)
+            messages.extend(
+                handle_tool_calls(
+                    assistant_message.tool_calls,
+                    consent_confirmed=request.contactConsent,
+                    visitor_emails=visitor_emails,
+                )
+            )
+            response = openai_client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                tools=available_tools,
+            )
+            tool_rounds += 1
+
+        reply = response.choices[0].message.content
+        if not reply:
+            raise RuntimeError("The model returned an empty reply")
+        return ChatResponse(reply=reply)
+    except HTTPException:
+        raise
+    except Exception as error:
+        logger.warning("Chat request failed: %s", type(error).__name__)
+        raise HTTPException(
+            status_code=502,
+            detail="The chat service is temporarily unavailable",
+        ) from error
