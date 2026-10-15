@@ -1,8 +1,9 @@
 fastapi
 uvicorn[standard]
 openai
-supabase
+psycopg[binary]
 pypdf
 python-dotenv
+truststore
 pytest
 httpx

@@ -3,7 +3,7 @@ import os
 import re
 from datetime import datetime, timezone
 
-from supabase import create_client
+import psycopg
 
 
 def record_user_details(
@@ -34,26 +34,30 @@ def record_user_details(
             raise ValueError("Notes must be 1000 characters or fewer")
         notes = notes.strip() or None
 
-    supabase_url = os.getenv("SUPABASE_URL")
-    service_role_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    if not supabase_url or not service_role_key:
-        raise RuntimeError("Supabase server credentials are not configured")
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        raise RuntimeError("DATABASE_URL is not configured")
 
-    client = create_client(supabase_url, service_role_key)
-    result = (
-        client.table("twin_contact_requests")
-        .insert(
-            {
-                "email": email,
-                "name": name,
-                "notes": notes,
-                "consent_confirmed_at": datetime.now(timezone.utc).isoformat(),
-            }
-        )
-        .execute()
-    )
-    if not result.data:
-        raise RuntimeError("Supabase did not confirm saving the contact request")
+    with psycopg.connect(database_url) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO public.twin_contact_requests
+                    (email, name, notes, consent_confirmed_at)
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    email,
+                    name,
+                    notes,
+                    datetime.now(timezone.utc),
+                ),
+            )
+            inserted_row = cursor.fetchone()
+
+    if inserted_row is None:
+        raise RuntimeError("PostgreSQL did not confirm saving the contact request")
 
     return {"status": "saved"}
 
@@ -90,13 +94,21 @@ def handle_tool_calls(tool_calls, consent_confirmed=False, visitor_emails=None):
         arguments = json.loads(tool_call.function.arguments)
         tool = TOOL_MAP.get(tool_name)
         if tool is None:
-            result = {"error": "Unknown tool"}
+            result = {"status": "error", "reason": "Unknown tool"}
         else:
-            result = tool(
-                **arguments,
-                consent_confirmed=consent_confirmed,
-                visitor_emails=visitor_emails,
-            )
+            try:
+                result = tool(
+                    **arguments,
+                    consent_confirmed=consent_confirmed,
+                    visitor_emails=visitor_emails,
+                )
+            except ValueError as error:
+                result = {"status": "error", "reason": str(error)}
+            except Exception:
+                result = {
+                    "status": "error",
+                    "reason": "Contact details could not be saved right now.",
+                }
         results.append(
             {
                 "role": "tool",

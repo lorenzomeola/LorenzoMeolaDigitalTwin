@@ -2,7 +2,7 @@
 
 ## Architecture
 
-One repository contains a public Next.js frontend, a separate Python API for the Digital Twin, shared structured profile/project content, and Supabase schema. The existing Gradio implementation remains under a legacy directory until the replacement has been verified. The frontend and API communicate over HTTPS; API credentials and database service credentials stay server-side.
+One repository contains a public Next.js frontend, a separate Python API for the Digital Twin, shared structured profile/project content, and a provider-neutral PostgreSQL schema. Neon Postgres is the initial database provider; the same SQL table can be migrated to Supabase Pro later. The existing Gradio implementation remains under a legacy directory until the replacement has been verified. The frontend and API communicate over HTTPS; API credentials and database credentials stay server-side.
 
 ## Frontend
 
@@ -22,7 +22,7 @@ No additional component or animation library is selected for the MVP; use native
 - **Python 3.12** as the initial runtime target.
 - **FastAPI** for the HTTP API, request validation, and OpenAPI documentation.
 - **OpenAI Python SDK** for model requests and function/tool calling.
-- **Supabase Python client** for the consent-gated contact request insertion.
+- **Psycopg 3** for parameterized, consent-gated PostgreSQL contact inserts.
 - **Pydantic** request/response models through FastAPI's validation layer.
 - **Pytest** for backend unit and endpoint tests.
 - **Vitest and React Testing Library** for frontend component tests.
@@ -44,25 +44,25 @@ Initial API responsibility:
 
 ## Data and Secrets
 
-- **Supabase Postgres** stores contact requests in a dedicated `twin_contact_requests` table for the Digital Twin, separate from MatchKeeper.
-- Enable Row Level Security. Do not grant direct `anon` or `authenticated` access; only the backend service role may insert.
-- Store `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` only in backend environment variables.
+- **Neon Postgres** stores contact requests in a dedicated `twin_contact_requests` table, separate from MatchKeeper. Use the Vercel Preview-scoped `DATABASE_URL` for preview deployments and keep the database credentials backend-only.
+- `database/schema.sql` is provider-neutral. The backend uses parameterized SQL through Psycopg and does not rely on Supabase Data APIs or auth roles.
+- When migrating to Supabase Pro, copy the table/schema and contact rows, apply Supabase-specific RLS policies, and replace `DATABASE_URL` with the Supabase Postgres connection string.
 - Store `OPENAI_API_KEY` only in backend environment variables.
 - `NEXT_PUBLIC_CHAT_API_URL` may contain the public API origin; it must not contain a secret.
-- Keep `.env` out of version control; commit only `.env.example` with placeholders.
+- Keep `.env` and `.env.local` out of version control; commit only `.env.example` with placeholders.
 
 ## Deployment
 
 - **Frontend**: Vercel.
 - **Python API**: a separate Python-capable host, to be selected before release. The deployment must support FastAPI, HTTPS, environment secrets, and the required response duration for model calls.
 - Configure the frontend's allowed origin in backend CORS settings; do not use a wildcard in production.
-- Set separate development and production credentials. Do not reuse MatchKeeper's Supabase project or service key.
+- Set separate Preview and Production database credentials. Do not reuse MatchKeeper's database.
 - Free tiers may have usage limits, cold starts, or suspend idle services; verify current provider limits before launch. OpenAI usage is billed separately from hosting.
 
 ## Quality and Security Checks
 
 - Frontend: TypeScript check, lint, Vitest/React Testing Library component tests, Playwright browser checks, and production build.
-- Backend: Pytest for request validation, tool consent, Supabase writes (mocked in unit tests), and error responses.
+- Backend: Pytest for request validation, tool consent, PostgreSQL writes (mocked in unit tests), and error responses.
 - Verify all four routes, responsive mobile layout, chat open/close, direct `/chat`, and API-unavailable state.
 - Verify secrets are absent from frontend output and logs.
 - Validate and bound message length/history and contact fields at the API boundary.
@@ -71,5 +71,5 @@ Initial API responsibility:
 ## Initial Dependency Files
 
 - `frontend/package.json` and lock file: Next.js, React, TypeScript, Tailwind, and selected test tooling.
-- `backend/requirements.txt`: FastAPI, Uvicorn, OpenAI SDK, Supabase client, and Pytest.
+- `backend/requirements.txt`: FastAPI, Uvicorn, OpenAI SDK, Psycopg, python-dotenv, and Pytest.
 - Avoid adding a database abstraction, authentication provider, analytics vendor, or agent framework until an MVP requirement needs it.

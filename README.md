@@ -5,9 +5,10 @@ Employer-focused personal website with About, Resume, Projects, and a Digital Tw
 ## Project layout
 
 - `frontend/` - Next.js website and chat interface.
-- `backend/` - FastAPI service for the Digital Twin, prompt loading, OpenAI tool dispatch, and consent-gated Supabase contact storage.
+- `backend/` - FastAPI service for the Digital Twin, prompt loading, OpenAI tool dispatch, and consent-gated PostgreSQL contact storage.
 - `content/` - shared, verified profile and project records.
-- `supabase/` - SQL schema for this portfolio's contact requests.
+- `database/` - provider-neutral PostgreSQL schema used by Neon now and portable to Supabase later.
+- `supabase/` - Supabase-specific schema/policies retained for a future migration.
 - `legacy/digital-twin-gradio/` - preserved copy of the original Gradio prototype.
 - `docs/` - product, technical, design, and implementation documentation.
 - `PRODUCT_PLAN.md` - product scope and delivery phases.
@@ -17,24 +18,34 @@ Employer-focused personal website with About, Resume, Projects, and a Digital Tw
 
 Keep public profile and project facts in `content/profile.json` and `content/projects.json` so the website and backend can use the same records. Verify project status and counts before publishing. Never add real Volvo data, screenshots, or internal links; demos must use synthetic data.
 
-## Run the Digital Twin API locally
+## Run the site locally
 
-Create a local `.env` from `.env.example`, then set `OPENAI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `ALLOWED_ORIGINS`. Keep actual values in local environment files or backend deployment settings; never commit them or expose the service-role key to the browser.
+Copy `.env.example` to `.env.local` in the repository root and fill in the provider keys and `DATABASE_URL`. Keep real values only in local environment files or deployment settings; never commit them. The backend reads `.env` and `.env.local`; deployed environments should inject variables directly.
 
-Install backend dependencies and start FastAPI from the repository root:
+Backend (FastAPI, port 8000), from the repository root:
 
 ```powershell
 uv venv backend\.venv --python 3.12
 uv pip install --python backend\.venv\Scripts\python.exe -r backend\requirements.txt
-backend\.venv\Scripts\python.exe -m uvicorn backend.app:app --reload --port 8000
+backend\.venv\Scripts\python.exe -m uvicorn backend.app:app --port 8000
 ```
 
-Run backend tests with `backend\.venv\Scripts\python.exe -m pytest -q`.
+Frontend (Next.js, port 3000):
 
-The health check is `http://localhost:8000/health`; the chat endpoint is `POST http://localhost:8000/api/chat`. `NEXT_PUBLIC_CHAT_API_URL` is the public API origin used by the future frontend.
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+The browser only talks to Next.js. Its `/api/chat` and `/api/providers` routes forward to FastAPI at `CHAT_API_URL`, so no keys or backend URLs reach the client.
+
+Tests and checks: `backend\.venv\Scripts\python.exe -m pytest -q`, and `npm run lint`, `npm run typecheck`, `npm run build` in `frontend/`.
+
+On a corporate network that re-signs TLS traffic, the backend uses the operating system certificate store (`truststore`). Outbound PostgreSQL (port 5432) may also be blocked there, which stops contact saving locally but not chat.
 
 ## Current migration status
 
 The Gradio prototype remains in the original `Digital Twin/` folder and has a verified backup at `legacy/digital-twin-gradio/`. Windows still blocks moving the original directory. Both copies currently match by path and SHA-256; keep the legacy copy and remove the duplicate original only after it is no longer open and the move succeeds.
 
-The FastAPI backend, shared content, and Supabase schema are in place. The Next.js frontend routes and the production Supabase project are not yet scaffolded/configured. Follow `docs/superpowers/plans/2026-10-15-personal-digital-cv.md` for the remaining stages.
+The FastAPI backend, the Next.js site (About, Resume, Projects and the full-screen chat) and the shared content are in place and run locally. Contact requests target Neon Postgres through `DATABASE_URL`; run `database/schema.sql` in the Neon SQL editor before testing inserts. Supabase Pro is a future provider migration: apply its schema/policies and change `DATABASE_URL` after copying any existing contact rows. The remaining stage is deploying both services; see `docs/superpowers/plans/2026-10-15-personal-digital-cv.md`.

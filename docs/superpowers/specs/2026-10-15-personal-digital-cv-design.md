@@ -6,9 +6,9 @@ Create one personal website for Lorenzo Meola with About, Resume, Projects, and 
 
 ## Architecture
 
-The repository root will be `Lorenzo Meola Digital CV/`. A Next.js App Router application in `frontend/` will render the public pages and the full-screen twin chat. A separate Python FastAPI application in `backend/` will own LLM requests, prompt assembly, tool dispatch, and server-side Supabase access.
+The repository root will be `Lorenzo Meola Digital CV/`. A Next.js App Router application in `frontend/` will render the public pages and the full-screen twin chat. A separate Python FastAPI application in `backend/` will own LLM requests, prompt assembly, tool dispatch, and server-side PostgreSQL access.
 
-Shared profile and project facts will live as structured content at the repository root, so the site and backend can use the same verified information. Contact requests will be stored in a Supabase project dedicated to this website, not in MatchKeeper's database. The current Gradio app will be preserved under a legacy directory until the replacement is working.
+Shared profile and project facts will live as structured content at the repository root, so the site and backend can use the same verified information. Contact requests will initially be stored in a dedicated Neon Postgres database, not in MatchKeeper's database. Keep the schema portable so contact storage can move to Supabase Pro later. The current Gradio app will be preserved under a legacy directory until the replacement is working.
 
 ## Routes and Experience
 
@@ -41,7 +41,8 @@ Lorenzo Meola Digital CV/
 ├── content/
 │   ├── profile.json
 │   └── projects.json
-├── supabase/schema.sql
+├── database/schema.sql
+├── supabase/schema.sql          # future Supabase-specific policies
 ├── legacy/digital-twin-gradio/
 ├── .env.example
 └── README.md
@@ -62,11 +63,11 @@ The existing `Digital Twin/` folder and its files will be moved intact to `legac
 
 The backend exposes the `record_user_details` model tool and keeps generic tool dispatch in the chat flow. It stores a visitor's contact only after a valid email and explicit consent through a visible visitor-controlled UI action. The model cannot grant consent on the visitor's behalf. The tool may store the visitor's name and brief professional follow-up notes only when provided.
 
-Supabase uses a dedicated `twin_contact_requests` table with Row Level Security enabled. The service-role key is backend-only and must never be exposed to the browser. Public and authenticated browser roles receive no direct table access. Unknown questions are not stored. Contact data is not sent through Pushover or another notification service in this version.
+Neon Postgres uses a dedicated `twin_contact_requests` table. The `DATABASE_URL` is backend-only and must never be exposed to the browser; no database credentials are bundled in frontend assets. The backend uses parameterized SQL through Psycopg. Unknown questions are not stored. Contact data is not sent through Pushover or another notification service in this version.
 
 ## Deployment
 
-The frontend is designed for Vercel. The Python API is deployed as a separate backend service with server-side OpenAI and Supabase credentials. The API origin is configured through a frontend server environment variable; secrets are never embedded in client bundles. The application remains usable as a portfolio if the chat API is unavailable.
+The frontend is designed for Vercel. The Python API is deployed as a separate backend service with server-side OpenAI and Neon credentials. The API origin is configured through a frontend server environment variable; secrets are never embedded in client bundles. Vercel Preview deployments use a Preview-scoped `DATABASE_URL`. The application remains usable as a portfolio if the chat API is unavailable.
 
 ## Verification
 
@@ -74,8 +75,8 @@ The frontend is designed for Vercel. The Python API is deployed as a separate ba
 - Confirm the chat opens and closes as an overlay and `/chat` loads directly.
 - Test chat loading, empty input, API error, and mobile layout states.
 - Test a factual question about each project and verify the answer respects its status and evidence constraints.
-- Test that contact storage is refused without explicit consent and succeeds with consent against a mocked Supabase client.
-- Verify that the browser bundle contains neither the OpenAI key nor Supabase service-role key.
+- Test that contact storage is refused without explicit consent and succeeds with consent against a mocked PostgreSQL connection.
+- Verify that the browser bundle contains neither the OpenAI key nor `DATABASE_URL`.
 - Run frontend build/lint and backend unit tests before deployment.
 
 ## Out of Scope for the Initial Release

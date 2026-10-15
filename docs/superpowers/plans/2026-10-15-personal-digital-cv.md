@@ -4,9 +4,9 @@
 
 **Goal:** Build one employer-focused personal website with About, Resume, Projects, and a full-screen Digital Twin chat backed by a Python API.
 
-**Architecture:** A Next.js 16 frontend in `frontend/` renders the public site and communicates with a separate FastAPI service in `backend/`. Verified profile/project content is shared from `content/`; a portfolio-specific Supabase table stores contact requests only after explicit consent. The existing Gradio application is preserved under `legacy/` until replacement verification.
+**Architecture:** A Next.js 16 frontend in `frontend/` renders the public site and communicates with a separate FastAPI service in `backend/`. Verified profile/project content is shared from `content/`; a dedicated Neon Postgres table stores contact requests only after explicit consent. The provider-neutral schema supports a later migration to Supabase Pro. The existing Gradio application is preserved under `legacy/` until replacement verification.
 
-**Tech Stack:** Next.js 16, React 19, TypeScript, Tailwind CSS 4, Python 3.12, FastAPI, OpenAI Python SDK, Supabase Python client/Postgres, Pytest, Vercel frontend hosting.
+**Tech Stack:** Next.js 16, React 19, TypeScript, Tailwind CSS 4, Python 3.12, FastAPI, OpenAI Python SDK, Psycopg 3, Neon Postgres, Pytest, Vercel frontend hosting.
 
 **Spec:** `docs/superpowers/specs/2026-10-15-personal-digital-cv-design.md`
 
@@ -18,7 +18,7 @@
 - Do not claim AI Assets Directory ownership until Lorenzo confirms his role.
 - MatchKeeper paid bookings are inactive and sandbox-tested only; do not claim real payment processing or adoption.
 - Store contact information only after explicit consent through a visible visitor-controlled UI action; the model cannot grant consent. Unknown questions and chat transcripts are not stored.
-- Keep OpenAI and Supabase service-role credentials on the backend; frontend output contains no secrets.
+- Keep OpenAI and database credentials on the backend; frontend output contains no secrets.
 - No existing files are deleted during initial organization; preserve the Gradio prototype under `legacy/`.
 
 ---
@@ -118,7 +118,8 @@ Expected: all three commands succeed and the four routes appear in the build out
 - Create: `backend/app.py`, `backend/context.py`, `backend/tools.py`, `backend/requirements.txt`.
 - Create: `backend/tests/test_chat.py`, `backend/tests/test_contact_tool.py`.
 - Move/copy: shared content remains at `content/` and is included in the backend deployment bundle.
-- Modify: `supabase/schema.sql` for the dedicated contact table and RLS policy.
+- Create: `database/schema.sql` for the provider-neutral contact table.
+- Retain: `supabase/schema.sql` for future Supabase-specific RLS policies; do not use it to initialize Neon.
 
 **Interfaces:**
 - `POST /api/chat` accepts `{ "message": string, "history": [{"role": "user" | "assistant", "content": string}], "contactConsent": boolean }` and returns `{ "reply": string }`.
@@ -138,7 +139,7 @@ Run from `backend/`:
 python -m pytest -q
 ```
 
-Expected: tests fail because the API, validation, and Supabase tool are not implemented yet.
+Expected: tests fail because the API, validation, and PostgreSQL tool are not implemented yet.
 
 - [x] **Step 3: Implement the request schema and health endpoint**
 
@@ -148,9 +149,9 @@ Add Pydantic chat request/response models, a `GET /health` endpoint, and `POST /
 
 Build the system prompt from the shared profile/project records. Keep one contact tool. Preserve the model tool-call loop, handle unknown tool names without invoking arbitrary functions, and return model/provider errors as non-sensitive HTTP errors.
 
-- [x] **Step 5: Implement consent-gated Supabase contact insertion**
+- [x] **Step 5: Implement consent-gated PostgreSQL contact insertion**
 
-Validate email format and field lengths, require literal boolean consent from the visitor-controlled request state, and do not accept consent as a model tool argument. Use `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` only in this process, then insert into `twin_contact_requests`. Add database constraints, enable RLS, and deny direct access to `anon` and `authenticated` roles.
+Validate email format and field lengths, require literal boolean consent from the visitor-controlled request state, and do not accept consent as a model tool argument. Use `DATABASE_URL` only in this process, then insert with parameterized Psycopg SQL into `public.twin_contact_requests` using `database/schema.sql`.
 
 - [x] **Step 6: Run backend tests**
 
@@ -160,7 +161,7 @@ Run:
 python -m pytest -q
 ```
 
-Expected: request validation, model-call/tool-call behavior, consent rejection, visitor-email origin checks, and mocked Supabase insertion tests pass. Run `backend\\.venv\\Scripts\\python.exe -m pytest -q` from the repository root; eleven backend tests pass.
+Expected: request validation, model-call/tool-call behavior, consent rejection, visitor-email origin checks, and mocked PostgreSQL insertion tests pass. Run `backend\\.venv\\Scripts\\python.exe -m pytest -q` from the repository root; twelve backend tests pass.
 
 ### Task 4: Connect the Full-Screen Chat
 
@@ -205,7 +206,7 @@ Run `npm test`, `npm run lint`, `npm run typecheck`, and `npm run build` from `f
 **Files:**
 - Modify: `frontend/next.config.ts` or backend CORS configuration as needed.
 - Create/update: root `.env.example` and deployment instructions in `README.md`.
-- Verify: `content/projects.json`, built frontend output, Supabase schema, and deployed routes.
+- Verify: `content/projects.json`, built frontend output, Neon schema, and deployed routes.
 
 - [ ] **Step 1: Test factual answers and refusal boundaries**
 
@@ -213,11 +214,11 @@ Use fixed evaluation prompts covering all three projects, Volvo privacy, MatchKe
 
 - [ ] **Step 2: Verify no secrets or sensitive Volvo data reach the frontend**
 
-Search the production frontend build for `OPENAI_API_KEY` and `SUPABASE_SERVICE_ROLE_KEY`; neither may appear. Inspect content and demo fixtures for real Volvo data or internal URLs; none may be present.
+Search the production frontend build for `OPENAI_API_KEY` and `DATABASE_URL`; neither may appear. Inspect content and demo fixtures for real Volvo data or internal URLs; none may be present.
 
 - [ ] **Step 3: Verify contact consent and database permissions**
 
-With a dedicated Supabase project, run `supabase/schema.sql`. Confirm an unconsented request is rejected by the API and that browser roles cannot select or insert contact rows directly.
+Run `database/schema.sql` in the Neon SQL editor. Confirm an unconsented request is rejected by the API and that database credentials are only configured on the backend.
 
 - [ ] **Step 4: Deploy frontend and backend separately**
 
