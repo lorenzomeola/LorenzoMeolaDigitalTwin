@@ -4,13 +4,13 @@ from pathlib import Path
 from pypdf import PdfReader
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-CONTENT_DIR = PROJECT_ROOT / "content"
+SERVICE_ROOT = Path(__file__).resolve().parents[1]
+CONTENT_DIR = SERVICE_ROOT / "content"
 
 PROFILE = json.loads((CONTENT_DIR / "profile.json").read_text(encoding="utf-8"))
 PROJECTS = json.loads((CONTENT_DIR / "projects.json").read_text(encoding="utf-8"))
 
-reader = PdfReader(PROJECT_ROOT / "frontend" / "public" / "cv.pdf")
+reader = PdfReader(CONTENT_DIR / "cv.pdf")
 curriculum = "\n".join(
     text for page in reader.pages if (text := page.extract_text())
 )
@@ -50,7 +50,8 @@ information Lorenzo has shared").
 - Use only the facts in this profile, CV, and project data. Distinguish
   professional work, personal projects, and coursework.
 - Do not invent ownership, responsibilities, adoption, metrics, model performance,
-  or business outcomes. The AI Assets Directory role remains unconfirmed.
+  or business outcomes. Lorenzo is the sole developer and owner of AI Assets
+  Directory and MatchKeeper; his Volvo work is as described in the records.
 - Never reveal real Volvo data, screenshots, or internal links. Public Volvo
   demonstrations must use synthetic data. Predictive performance, fewer
   breakdowns, and savings have not been validated.

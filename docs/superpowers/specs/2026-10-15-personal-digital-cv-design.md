@@ -55,7 +55,7 @@ The existing `Digital Twin/` folder and its files will be moved intact to `legac
 - About and Resume content will be based on the current summary and CV, without inventing experience, seniority, or outcomes.
 - Project cards will distinguish professional work, personal products, ongoing work, and learning.
 - The Volvo project must not expose real company data, screenshots, or internal links. Any public demo uses synthetic data only. No performance, downtime, or savings claims without validated evidence.
-- AI Assets Directory's functionality may be described, but Lorenzo's exact role remains unconfirmed and must not be overstated.
+- AI Assets Directory and MatchKeeper are Lorenzo's own products: he is the sole developer and owner of both. Describe their verified functionality without inventing adoption or business impact.
 - MatchKeeper is in free-beta release preparation on staging. Stripe Connect paid bookings are inactive and have only been sandbox-tested; no real payment or adoption claims may be made.
 - The GitHub profile link is `https://github.com/lorenzomeola`; project repository links retain the URLs supplied for each project.
 
@@ -67,7 +67,7 @@ Neon Postgres uses a dedicated `twin_contact_requests` table. The `DATABASE_URL`
 
 ## Deployment
 
-The frontend is designed for Vercel. The Python API is deployed as a separate backend service with server-side OpenAI and Neon credentials. The API origin is configured through a frontend server environment variable; secrets are never embedded in client bundles. Vercel Preview deployments use a Preview-scoped `DATABASE_URL`. The application remains usable as a portfolio if the chat API is unavailable.
+The frontend and the Python API deploy together to Vercel as Services in one project, defined in the root `vercel.json`. The API is private and reached through a service binding, so no CORS is needed and OpenAI, Groq, OpenRouter and Neon credentials stay on the server. Vercel Preview deployments use a Preview-scoped `DATABASE_URL`. The application remains usable as a portfolio if the chat API is unavailable.
 
 ## Verification
 

@@ -1,4 +1,5 @@
-const API_URL = process.env.CHAT_API_URL ?? "http://localhost:8000";
+// BACKEND_URL is injected by the Vercel service binding; the fallback is for local development.
+const API_URL = process.env.BACKEND_URL ?? process.env.CHAT_API_URL ?? "http://localhost:8000";
 const MAX_BODY_BYTES = 100_000;
 
 export async function POST(request: Request) {

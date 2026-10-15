@@ -8,7 +8,7 @@ os.environ.setdefault("OPENAI_API_KEY", "test-openai-key")
 
 from fastapi.testclient import TestClient
 
-from backend.app import app
+from app.main import app
 
 
 client = TestClient(app)
@@ -21,7 +21,7 @@ def openai_key(monkeypatch):
 
 def use_client(monkeypatch, create):
     fake_client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
-    monkeypatch.setattr("backend.app.client_for", lambda provider: fake_client)
+    monkeypatch.setattr("app.main.client_for", lambda provider: fake_client)
 
 
 def model_response(text):
@@ -93,7 +93,7 @@ def test_chat_runs_tool_call_and_returns_follow_up_reply(monkeypatch):
     )
     dispatch = Mock(return_value=[])
     use_client(monkeypatch, create)
-    monkeypatch.setattr("backend.app.handle_tool_calls", dispatch)
+    monkeypatch.setattr("app.main.handle_tool_calls", dispatch)
 
     response = client.post(
         "/api/chat",
@@ -183,6 +183,15 @@ def test_providers_lists_only_configured_providers_without_secrets(monkeypatch):
     assert [provider["id"] for provider in body["providers"]] == ["openai", "groq"]
     assert body["default"] == {"provider": "openai", "model": "gpt-5.4-nano"}
     assert "secret" not in response.text
+
+
+def test_openrouter_only_offers_free_models():
+    from app.main import PROVIDERS
+
+    models = PROVIDERS["openrouter"]["models"]
+
+    assert models
+    assert all(model.endswith(":free") for model in models)
 
 
 def test_chat_uses_the_selected_provider_and_model(monkeypatch):

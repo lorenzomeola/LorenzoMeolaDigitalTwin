@@ -1,0 +1,96 @@
+{
+  "name": "Lorenzo Meola",
+  "headline": "AI Product Engineer",
+  "tagline": "I build real products with AI coding agents: I design the solution, guide the agent, then read and validate the Python and React it produces.",
+  "origin": "Colombia",
+  "location": "Belgium",
+  "education": [
+    {
+      "institution": "MIA Digital University",
+      "field": "MSc, Artificial Intelligence & Machine Learning",
+      "location": "Barcelona",
+      "period": "2022-2023"
+    },
+    {
+      "institution": "Politecnico di Torino",
+      "field": "BSc, Automotive Engineering",
+      "location": "Italy",
+      "period": "2018-2021"
+    }
+  ],
+  "experience": [
+    {
+      "role": "Technical Analyst & AI Tooling Developer",
+      "company": "Volvo Group",
+      "period": "Jan 2026 - Present",
+      "highlights": [
+        "Build internal tools and data products for my team by working through Claude Code and Codex, designing and validating the solution rather than writing the code line by line.",
+        "Pick the LLM that fits each task (Claude, OpenAI, Gemini or open source), weighing cost, speed and how much reasoning it needs.",
+        "Develop Python/FastAPI apps and SQL pipelines that turn raw fleet data into something the team can use, reading and validating all the AI-generated code myself."
+      ]
+    },
+    {
+      "role": "Technical Support Engineer",
+      "company": "Volvo Group",
+      "period": "Feb 2023 - Dec 2025",
+      "highlights": [
+        "Provided worldwide technical support to dealers on ECU programming, diagnostics and electronic system repair.",
+        "Solved complex technical problems under time pressure and communicated solutions clearly across global teams."
+      ]
+    },
+    {
+      "role": "Product Developer",
+      "company": "De Metalicos",
+      "period": "Sep 2022 - Dec 2022",
+      "highlights": [
+        "Developed and designed metal products using CAD tools, iterating quickly from concept to manufacturable design."
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "group": "Core skills",
+      "items": [
+        "AI coding agents (Claude Code / Codex)",
+        "Prompt engineering & AI workflows",
+        "Model selection (Claude / OpenAI / Gemini)",
+        "Python (read & validate)",
+        "React (read & validate)",
+        "SQL (intermediate)"
+      ]
+    },
+    {
+      "group": "AI & dev stack",
+      "items": [
+        "Claude Code / Codex / GitHub Copilot",
+        "Claude, OpenAI, Gemini & open-source LLMs",
+        "Agentic and AI-assisted workflows",
+        "REST APIs, FastAPI, HTML / JS / CSS",
+        "Git & rapid product iteration"
+      ]
+    }
+  ],
+  "languages": [
+    { "name": "English", "level": "C1" },
+    { "name": "Spanish", "level": "C2" },
+    { "name": "Italian", "level": "B2" }
+  ],
+  "certificates": ["SQL Certification", "IELTS - Level B2 (2018)"],
+  "careerGoal": "AI Engineer",
+  "professionalInterests": [
+    "AI engineering and practical applications of AI",
+    "Motorsport",
+    "Sports-car testing and design"
+  ],
+  "personalInterests": [
+    "Sport",
+    "Food",
+    "Travel",
+    "Cars and motorbikes",
+    "Family and friends"
+  ],
+  "links": {
+    "github": "https://github.com/lorenzomeola",
+    "linkedin": "https://www.linkedin.com/in/lmv14/"
+  }
+}

@@ -49,8 +49,8 @@
     "statusShort": "Live",
     "kind": "Personal project",
     "summary": "Directory and learning hub for Claude Skills, MCP servers, GitHub Copilot agents, AI workflows, and Cursor Rules, with source, license, and installation guidance where available.",
-    "contribution": "Exact personal contribution and role are pending confirmation. Describe verified product functionality without claiming sole ownership or founder status.",
-    "contributionConfirmed": false,
+    "contribution": "Sole developer and owner. Built the entire product on my own.",
+    "contributionConfirmed": true,
     "technology": [
       "Next.js 16",
       "React 19",

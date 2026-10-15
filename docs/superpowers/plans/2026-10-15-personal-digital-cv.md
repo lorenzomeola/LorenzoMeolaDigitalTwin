@@ -1,5 +1,7 @@
 # Personal Digital CV Implementation Plan
 
+> **Status note:** this plan predates two decisions. The backend now ships as a Vercel Service in the same project as the frontend (root `vercel.json`), not on a separate host, and its package is `backend/app/` with its own `content/`. The AI Assets Directory role is confirmed (sole developer and owner). Where steps below disagree, `README.md` and `TECH_STACK.md` are current.
+
 > **For agentic workers:** Use inline execution with task-by-task review. Steps use checkbox syntax for tracking.
 
 **Goal:** Build one employer-focused personal website with About, Resume, Projects, and a full-screen Digital Twin chat backed by a Python API.
@@ -15,7 +17,7 @@
 - The website targets employers evaluating Lorenzo for AI Engineer roles.
 - The three initial projects are Volvo CCA Fleet Analytics, AI Assets Directory, and MatchKeeper.
 - Do not expose Volvo data, screenshots, or internal links; any demo uses synthetic data.
-- Do not claim AI Assets Directory ownership until Lorenzo confirms his role.
+- Do not claim business impact, adoption, or revenue for AI Assets Directory or MatchKeeper; Lorenzo is sole developer and owner of both.
 - MatchKeeper paid bookings are inactive and sandbox-tested only; do not claim real payment processing or adoption.
 - Store contact information only after explicit consent through a visible visitor-controlled UI action; the model cannot grant consent. Unknown questions and chat transcripts are not stored.
 - Keep OpenAI and database credentials on the backend; frontend output contains no secrets.

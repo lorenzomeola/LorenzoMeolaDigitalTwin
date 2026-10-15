@@ -68,7 +68,7 @@ These are release criteria, not claims of hiring outcomes, traffic, or business 
 2. **Portfolio shell**: scaffold Next.js, add shared navigation and the About, Resume, and Projects routes using verified content.
 3. **Twin API**: create the FastAPI chat endpoint, port prompt/tool behavior, validate requests, and connect consent-gated contact storage to the dedicated Neon Postgres table.
 4. **Chat experience**: build the full-screen overlay and direct chat route; connect it to the API and cover loading, failure, and mobile states.
-5. **Release**: run functional, privacy, and build checks; deploy the frontend to Vercel and the Python API to a selected Python-capable host; configure production environment variables and verify the live site.
+5. **Release**: run functional, privacy, and build checks; deploy frontend and Python API together as Vercel Services in the existing project; configure production environment variables and verify the live site.
 6. **Ongoing portfolio updates**: add a project or course milestone only when there is a concrete artifact, clear personal contribution, and honest status/evidence.
 
 ## Out of Scope for MVP

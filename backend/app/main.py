@@ -12,15 +12,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from backend.context import system_prompt
-from backend.tools import TOOLS, handle_tool_calls
+from app.context import system_prompt
+from app.tools import TOOLS, handle_tool_calls
 
 # Corporate networks re-sign TLS traffic; the OS trust store lets provider calls verify.
 truststore.inject_into_ssl()
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-load_dotenv(PROJECT_ROOT / ".env")
-load_dotenv(PROJECT_ROOT / ".env.local", override=True)
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(REPOSITORY_ROOT / ".env")
+load_dotenv(REPOSITORY_ROOT / ".env.local", override=True)
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ PROVIDERS = {
         "key_env": "OPENROUTER_API_KEY",
         "base_url": "https://openrouter.ai/api/v1",
         "token_param": "max_tokens",
-        "models": ["anthropic/claude-haiku-4.5"],
+        "models": ["nvidia/nemotron-3-super-120b-a12b:free", "google/gemma-4-31b-it:free"],
     },
 }
 MAX_REPLY_TOKENS = 2000

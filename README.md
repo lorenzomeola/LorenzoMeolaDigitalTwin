@@ -6,7 +6,8 @@ Employer-focused personal website with About, Resume, Projects, and a Digital Tw
 
 - `frontend/` - Next.js website and chat interface.
 - `backend/` - FastAPI service for the Digital Twin, prompt loading, OpenAI tool dispatch, and consent-gated PostgreSQL contact storage.
-- `content/` - shared, verified profile and project records.
+- `vercel.json` - deploys `frontend/` and `backend/` together as Vercel Services in one project.
+- `backend/content/`, `frontend/content/` - identical copies of the verified profile and project records (one per service).
 - `database/` - provider-neutral PostgreSQL schema used by Neon now and portable to Supabase later.
 - `supabase/` - Supabase-specific schema/policies retained for a future migration.
 - `legacy/digital-twin-gradio/` - preserved copy of the original Gradio prototype.
@@ -16,18 +17,18 @@ Employer-focused personal website with About, Resume, Projects, and a Digital Tw
 
 ## Content source
 
-Keep public profile and project facts in `content/profile.json` and `content/projects.json` so the website and backend can use the same records. Verify project status and counts before publishing. Never add real Volvo data, screenshots, or internal links; demos must use synthetic data.
+Keep public profile and project facts in `backend/content/` (read by the twin) and `frontend/content/` (read by the site). The two copies must stay identical; a backend test fails if they differ. Never add real Volvo data, screenshots, or internal links; demos must use synthetic data.
 
 ## Run the site locally
 
 Copy `.env.example` to `.env.local` in the repository root and fill in the provider keys and `DATABASE_URL`. Keep real values only in local environment files or deployment settings; never commit them. The backend reads `.env` and `.env.local`; deployed environments should inject variables directly.
 
-Backend (FastAPI, port 8000), from the repository root:
+Backend (FastAPI, port 8000), from `backend/`:
 
 ```powershell
-uv venv backend\.venv --python 3.12
-uv pip install --python backend\.venv\Scripts\python.exe -r backend\requirements.txt
-backend\.venv\Scripts\python.exe -m uvicorn backend.app:app --port 8000
+uv venv .venv --python 3.12
+uv pip install --python .venv\Scripts\python.exe -e ".[dev]"
+.venv\Scripts\python.exe -m uvicorn app.main:app --port 8000
 ```
 
 Frontend (Next.js, port 3000):
@@ -38,9 +39,9 @@ npm install
 npm run dev
 ```
 
-The browser only talks to Next.js. Its `/api/chat` and `/api/providers` routes forward to FastAPI at `CHAT_API_URL`, so no keys or backend URLs reach the client.
+The browser only talks to Next.js. Its `/api/chat` and `/api/providers` routes forward to FastAPI, so no keys or backend URLs reach the client. On Vercel both run as services of one project (`vercel.json`), and the backend stays private: the platform injects its URL as `BACKEND_URL`. Locally, `CHAT_API_URL` plays that role, or run both together with `npx vercel dev -L` from the repository root.
 
-Tests and checks: `backend\.venv\Scripts\python.exe -m pytest -q`, and `npm run lint`, `npm run typecheck`, `npm run build` in `frontend/`.
+Tests and checks: `.venv\Scripts\python.exe -m pytest -q` in `backend/`, and `npm run lint`, `npm run typecheck`, `npm run build` in `frontend/`.
 
 On a corporate network that re-signs TLS traffic, the backend uses the operating system certificate store (`truststore`). Outbound PostgreSQL (port 5432) may also be blocked there, which stops contact saving locally but not chat.
 

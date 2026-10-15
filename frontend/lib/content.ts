@@ -1,5 +1,5 @@
-import profileJson from "@content/profile.json";
-import projectsJson from "@content/projects.json";
+import profileJson from "@/content/profile.json";
+import projectsJson from "@/content/projects.json";
 
 export interface Profile {
   name: string;

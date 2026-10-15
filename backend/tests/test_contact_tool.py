@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from backend import tools
+from app import tools
 
 
 def test_model_tool_schema_does_not_accept_consent_as_an_argument():
@@ -26,7 +26,7 @@ def test_contact_tool_saves_only_after_consent():
                 "DATABASE_URL": "postgresql://test-user:test-password@example.com/test-db",
             },
         ),
-        patch("backend.tools.psycopg.connect", return_value=connection) as connect,
+        patch("app.tools.psycopg.connect", return_value=connection) as connect,
     ):
         result = tools.record_user_details(
             email=" candidate@example.com ",
@@ -80,7 +80,7 @@ def test_dispatch_rejects_email_not_written_by_the_visitor():
         ),
     )
 
-    with patch("backend.tools.psycopg.connect") as connect:
+    with patch("app.tools.psycopg.connect") as connect:
         results = tools.handle_tool_calls(
             [tool_call],
             consent_confirmed=True,
@@ -102,7 +102,7 @@ def test_dispatch_reports_storage_failures_as_tool_errors():
 
     with (
         patch.dict(os.environ, {"DATABASE_URL": "postgresql://u:p@example.com/db"}),
-        patch("backend.tools.psycopg.connect", side_effect=OSError("unreachable")),
+        patch("app.tools.psycopg.connect", side_effect=OSError("unreachable")),
     ):
         results = tools.handle_tool_calls(
             [tool_call],

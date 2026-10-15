@@ -37,7 +37,7 @@ Initial API responsibility:
 
 ## Shared Content
 
-- `content/profile.json`: verified short biography, education, experience, skills, and public profile links.
+- `backend/content/` and `frontend/content/`: identical copies of `profile.json` and `projects.json` (biography, education, experience, skills, project cards). Each Vercel service only sees its own folder, so each carries a copy; a backend test fails if they diverge. The CV text for the twin is read from `backend/content/cv.pdf`; the downloadable CV lives in `frontend/public/cv.pdf`.
 - `content/projects.json`: the three project cards, contribution, stack, status, evidence, privacy constraints, and public links.
 - Both apps consume the same repository content. The backend deployment must package the `content/` directory with its service.
 - Keep confidential Volvo material out of shared content and tests; any demo dataset must be synthetic.
@@ -48,13 +48,13 @@ Initial API responsibility:
 - `database/schema.sql` is provider-neutral. The backend uses parameterized SQL through Psycopg and does not rely on Supabase Data APIs or auth roles.
 - When migrating to Supabase Pro, copy the table/schema and contact rows, apply Supabase-specific RLS policies, and replace `DATABASE_URL` with the Supabase Postgres connection string.
 - Store `OPENAI_API_KEY` only in backend environment variables.
-- `NEXT_PUBLIC_CHAT_API_URL` may contain the public API origin; it must not contain a secret.
+- `BACKEND_URL` is injected by the Vercel service binding and `CHAT_API_URL` is its local-development equivalent; neither is a secret and neither reaches the browser.
 - Keep `.env` and `.env.local` out of version control; commit only `.env.example` with placeholders.
 
 ## Deployment
 
 - **Frontend**: Vercel.
-- **Python API**: a separate Python-capable host, to be selected before release. The deployment must support FastAPI, HTTPS, environment secrets, and the required response duration for model calls.
+- **Frontend and Python API**: one Vercel project using Vercel Services (Beta), configured in the root `vercel.json`. Next.js is the public service; FastAPI is private and reached only through a service binding (`BACKEND_URL`), so there is one domain, no CORS and no second host. Set the project's Root Directory to the repository root and its Framework to Services.
 - Configure the frontend's allowed origin in backend CORS settings; do not use a wildcard in production.
 - Set separate Preview and Production database credentials. Do not reuse MatchKeeper's database.
 - Free tiers may have usage limits, cold starts, or suspend idle services; verify current provider limits before launch. OpenAI usage is billed separately from hosting.
