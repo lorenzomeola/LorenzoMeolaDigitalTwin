@@ -1,9 +1,12 @@
 import json
+import logging
 import os
 import re
 from datetime import datetime, timezone
 
 import psycopg
+
+logger = logging.getLogger(__name__)
 
 
 def record_user_details(
@@ -36,6 +39,7 @@ def record_user_details(
 
     database_url = os.getenv("DATABASE_URL")
     if not database_url:
+        logger.error("contact_save_unconfigured variable=DATABASE_URL")
         raise RuntimeError("DATABASE_URL is not configured")
 
     with psycopg.connect(database_url) as connection:
@@ -104,7 +108,12 @@ def handle_tool_calls(tool_calls, consent_confirmed=False, visitor_emails=None):
                 )
             except ValueError as error:
                 result = {"status": "error", "reason": str(error)}
-            except Exception:
+            except Exception as error:
+                logger.error(
+                    "contact_save_failed error_type=%s sqlstate=%s",
+                    type(error).__name__,
+                    getattr(error, "sqlstate", None) or "none",
+                )
                 result = {
                     "status": "error",
                     "reason": "Contact details could not be saved right now.",

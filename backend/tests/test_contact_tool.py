@@ -91,7 +91,7 @@ def test_dispatch_rejects_email_not_written_by_the_visitor():
     assert json.loads(results[0]["content"])["status"] == "error"
 
 
-def test_dispatch_reports_storage_failures_as_tool_errors():
+def test_dispatch_reports_storage_failures_as_tool_errors(caplog):
     tool_call = SimpleNamespace(
         id="call_2",
         function=SimpleNamespace(
@@ -102,7 +102,7 @@ def test_dispatch_reports_storage_failures_as_tool_errors():
 
     with (
         patch.dict(os.environ, {"DATABASE_URL": "postgresql://u:p@example.com/db"}),
-        patch("app.tools.psycopg.connect", side_effect=OSError("unreachable")),
+        patch("app.tools.psycopg.connect", side_effect=OSError("secret connection details")),
     ):
         results = tools.handle_tool_calls(
             [tool_call],
@@ -112,4 +112,28 @@ def test_dispatch_reports_storage_failures_as_tool_errors():
 
     payload = json.loads(results[0]["content"])
     assert payload["status"] == "error"
-    assert "unreachable" not in results[0]["content"]
+    assert "secret connection details" not in results[0]["content"]
+    assert "contact_save_failed error_type=OSError sqlstate=none" in caplog.text
+    assert "secret connection details" not in caplog.text
+    assert "candidate@example.com" not in caplog.text
+
+
+def test_dispatch_logs_missing_database_configuration(caplog):
+    tool_call = SimpleNamespace(
+        id="call_missing_database",
+        function=SimpleNamespace(
+            name="record_user_details",
+            arguments=json.dumps({"email": "candidate@example.com"}),
+        ),
+    )
+
+    with patch.dict(os.environ, {}, clear=True):
+        results = tools.handle_tool_calls(
+            [tool_call],
+            consent_confirmed=True,
+            visitor_emails={"candidate@example.com"},
+        )
+
+    assert json.loads(results[0]["content"])["status"] == "error"
+    assert "contact_save_unconfigured variable=DATABASE_URL" in caplog.text
+    assert "candidate@example.com" not in caplog.text
