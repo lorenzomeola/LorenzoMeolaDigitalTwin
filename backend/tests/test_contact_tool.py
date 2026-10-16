@@ -137,3 +137,91 @@ def test_dispatch_logs_missing_database_configuration(caplog):
     assert json.loads(results[0]["content"])["status"] == "error"
     assert "contact_save_unconfigured variable=DATABASE_URL" in caplog.text
     assert "candidate@example.com" not in caplog.text
+
+
+def test_contact_details_are_public_and_match_the_cv():
+    from app.context import PUBLIC_CONTACT_DETAILS
+
+    result = tools.get_contact_details()
+
+    assert result == {"status": "ok", **PUBLIC_CONTACT_DETAILS}
+    assert result["email"] and result["phone"]
+    assert result["location"] == "Ghent, Belgium"
+
+
+def test_read_tools_are_available_without_storage_consent():
+    schemas = tools.available_tools(consent_confirmed=False, visitor_emails=set())
+    names = {schema["function"]["name"] for schema in schemas}
+
+    assert names == {"get_contact_details", "get_skills_for_role"}
+
+
+@pytest.mark.parametrize("tool_name,arguments,table", [
+    ("request_interview", {
+        "name": "Recruiter", "company": "Example Co", "email": "candidate@example.com",
+        "role": "AI Engineer", "message": "Discuss the position", "preferred_time": "Tuesday 14:00 CET",
+    }, "twin_interview_requests"),
+    ("leave_message", {
+        "name": "Recruiter", "email": "candidate@example.com", "message": "Discuss the position",
+    }, "twin_messages"),
+])
+def test_new_write_tools_persist_only_visitor_provided_fields(tool_name, arguments, table):
+    connection = MagicMock()
+    cursor = connection.__enter__.return_value.cursor.return_value.__enter__.return_value
+    cursor.fetchone.return_value = (1,)
+    visitor_text = " ".join(arguments.values())
+    with (
+        patch.dict(os.environ, {"DATABASE_URL": "postgresql://test"}),
+        patch("app.tools.psycopg.connect", return_value=connection),
+    ):
+        result = tools.TOOL_MAP[tool_name](
+            **arguments, consent_confirmed=True,
+            visitor_emails={"candidate@example.com"}, visitor_text=visitor_text,
+        )
+
+    assert result["status"] == "saved"
+    query, parameters = cursor.execute.call_args.args
+    assert table in query
+    assert "candidate@example.com" not in query
+    assert "candidate@example.com" in parameters
+    assert parameters[-1]
+
+
+@pytest.mark.parametrize("tool_name", ["request_interview", "leave_message"])
+def test_new_write_tools_reject_missing_consent(tool_name):
+    arguments = {"name": "Recruiter", "email": "candidate@example.com", "message": "Hello"}
+    if tool_name == "request_interview":
+        arguments.update(company="Example Co", role="AI Engineer")
+    with pytest.raises(ValueError, match="consent"):
+        tools.TOOL_MAP[tool_name](**arguments, consent_confirmed=False)
+
+
+def test_message_cannot_be_invented_by_model():
+    with patch("app.tools.psycopg.connect") as connect, pytest.raises(ValueError, match="visitor"):
+        tools.leave_message(
+            name="Recruiter", email="candidate@example.com", message="Invented message",
+            consent_confirmed=True, visitor_emails={"candidate@example.com"},
+            visitor_text="Recruiter candidate@example.com Hello",
+        )
+    connect.assert_not_called()
+
+
+def test_public_tool_dispatch_does_not_require_email_or_consent():
+    tool_call = SimpleNamespace(id="public", function=SimpleNamespace(
+        name="get_contact_details", arguments="{}",
+    ))
+
+    result = json.loads(tools.handle_tool_calls([tool_call])[0]["content"])
+
+    assert result["status"] == "ok"
+    assert result["location"] == "Ghent, Belgium"
+
+
+def test_dispatch_rejects_malformed_arguments_without_crashing():
+    tool_call = SimpleNamespace(id="bad", function=SimpleNamespace(
+        name="get_contact_details", arguments="not json",
+    ))
+
+    result = json.loads(tools.handle_tool_calls([tool_call])[0]["content"])
+
+    assert result["status"] == "error"

@@ -134,3 +134,25 @@ def test_reviewer_and_repair_remove_unsolicited_cv_offers():
     assert "unnecessary closing questions" in policy
     assert "Explicitly requested summaries" in policy
     assert "Remove unsolicited offers" in repair
+
+
+def test_owner_authorized_contact_details_pass_the_filter():
+    from app.context import PUBLIC_CONTACT_DETAILS
+    from app.guardrails import guard_reply
+
+    draft = f"Email: {PUBLIC_CONTACT_DETAILS['email']}. Phone: {PUBLIC_CONTACT_DETAILS['phone']}. Location: Ghent, Belgium."
+    client = reviewer('{"approved": true, "violations": []}')
+
+    assert guard_reply(draft, "How do I contact Lorenzo?", client) == draft
+    policy = client.chat.completions.create.call_args.kwargs["messages"][0]["content"]
+    assert "owner-authorized public contact" in policy
+
+
+def test_rejected_role_analysis_is_not_rewritten_with_a_model_generated_score():
+    from app.guardrails import SAFE_REPLY, guard_reply
+
+    client = reviewer('{"approved": false, "violations": ["unsupported_claim"]}')
+
+    assert guard_reply("Estimated coverage: 80%", "Python role", client,
+                       verified_analysis={"coverage_percent": 80}) == SAFE_REPLY
+    assert client.chat.completions.create.call_count == 1

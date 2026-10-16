@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from app.context import system_prompt
 from app.guardrails import CONTACT_FAILED_REPLY, CONTACT_SAVED_REPLY, guard_reply
 from app.rate_limit import enforce_rate_limit
-from app.tools import TOOLS, handle_tool_calls
+from app.tools import WRITE_TOOLS, available_tools, handle_tool_calls
 
 # Corporate networks re-sign TLS traffic; the OS trust store lets provider calls verify.
 truststore.inject_into_ssl()
@@ -122,7 +122,7 @@ class HistoryMessage(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    message: str = Field(min_length=1, max_length=4000)
+    message: str = Field(min_length=1, max_length=12000)
     history: list[HistoryMessage] = Field(default_factory=list, max_length=20)
     contactConsent: bool = False
     provider: str = "openai"
@@ -184,25 +184,46 @@ def chat(request: ChatRequest, http_request: Request):
         message["content"] for message in messages if message["role"] == "user"
     )
     visitor_emails = set(email_pattern.findall(visitor_text))
-    available_tools = TOOLS if request.contactConsent and visitor_emails else []
-    options = completion_options(request.provider, request.model, available_tools)
+    offered_tools = available_tools(request.contactConsent, visitor_emails)
+    options = completion_options(request.provider, request.model, offered_tools)
 
     try:
         response = client.chat.completions.create(messages=messages, **options)
         if response.choices[0].finish_reason == "tool_calls":
             tool_calls = response.choices[0].message.tool_calls
             if (
-                not available_tools or len(tool_calls) != 1
-                or tool_calls[0].function.name != "record_user_details"
+                len(tool_calls) != 1
+                or tool_calls[0].function.name not in {tool["function"]["name"] for tool in offered_tools}
             ):
                 raise RuntimeError("Tool call is not allowed")
             results = handle_tool_calls(
                 tool_calls,
                 consent_confirmed=request.contactConsent,
                 visitor_emails=visitor_emails,
+                visitor_text=visitor_text,
+                current_message=request.message,
+                analysis_client=review_client(),
             )
-            saved = bool(results) and json.loads(results[0]["content"]).get("status") == "saved"
-            return ChatResponse(reply=CONTACT_SAVED_REPLY if saved else CONTACT_FAILED_REPLY)
+            tool_name = tool_calls[0].function.name
+            result = json.loads(results[0]["content"]) if results else {"status": "error"}
+            if tool_name in WRITE_TOOLS:
+                confirmations = {
+                    "record_user_details": CONTACT_SAVED_REPLY,
+                    "request_interview": "Your interview request has been saved for Lorenzo. This is not a confirmed booking; the preferred time is a request only.",
+                    "leave_message": "Your message has been saved for Lorenzo. No automatic notification has been sent.",
+                }
+                return ChatResponse(reply=confirmations[tool_name] if result.get("status") == "saved" else CONTACT_FAILED_REPLY)
+            if result.get("status") != "ok":
+                return ChatResponse(reply="I couldn't retrieve that information right now. Please try again with the full details.")
+            if tool_name == "get_contact_details":
+                return ChatResponse(reply=(
+                    f"Lorenzo Meola\n\nEmail: {result['email']}\n\nPhone: {result['phone']}\n\nLocation: {result['location']}"
+                ))
+            from app.role_match import render_analysis
+
+            return ChatResponse(reply=guard_reply(
+                render_analysis(result), request.message, review_client(), verified_analysis=result,
+            ))
 
         reply = response.choices[0].message.content
         if not reply:

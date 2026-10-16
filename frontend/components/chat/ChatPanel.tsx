@@ -144,7 +144,7 @@ export function ChatPanel({ onClose }: { onClose?: () => void }) {
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={onKeyDown}
               rows={1}
-              maxLength={4000}
+              maxLength={12000}
               placeholder="Ask anything about Lorenzo's work..."
               aria-label="Message"
               className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-3 py-2.5 text-[15px] outline-none placeholder:text-ink-soft"
@@ -166,7 +166,7 @@ export function ChatPanel({ onClose }: { onClose?: () => void }) {
                 onChange={(event) => chat.setContactConsent(event.target.checked)}
                 className="accent-[var(--accent)]"
               />
-              <span>Allow the twin to save my email if I share it, so Lorenzo can reply</span>
+              <span>Allow the twin to save my details, messages and interview requests so Lorenzo can reply</span>
             </label>
 
             {chat.providers && chat.providers.length > 0 ? (

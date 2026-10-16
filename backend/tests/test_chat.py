@@ -21,7 +21,7 @@ def openai_key(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
     monkeypatch.setattr("app.main.enforce_rate_limit", Mock(), raising=False)
     monkeypatch.setattr("app.main.review_client", lambda: None, raising=False)
-    monkeypatch.setattr("app.main.guard_reply", lambda draft, *args: draft, raising=False)
+    monkeypatch.setattr("app.main.guard_reply", lambda draft, *args, **kwargs: draft, raising=False)
 
 
 def use_client(monkeypatch, create):
@@ -55,7 +55,9 @@ def test_chat_returns_model_reply_without_contact_consent(monkeypatch):
 
     assert response.status_code == 200
     assert response.json() == {"reply": "I build data and AI projects."}
-    assert "tools" not in create.call_args.kwargs
+    assert {tool["function"]["name"] for tool in create.call_args.kwargs["tools"]} == {
+        "get_contact_details", "get_skills_for_role",
+    }
 
 
 def test_chat_offers_contact_tool_only_after_ui_consent(monkeypatch):
@@ -72,9 +74,9 @@ def test_chat_offers_contact_tool_only_after_ui_consent(monkeypatch):
 
     assert response.status_code == 200
     assert response.json()["reply"] == "Would you like to share your email?"
-    assert [tool["function"]["name"] for tool in create.call_args.kwargs["tools"]] == [
-        "record_user_details"
-    ]
+    assert {tool["function"]["name"] for tool in create.call_args.kwargs["tools"]} == {
+        "record_user_details", "request_interview", "leave_message", "get_contact_details", "get_skills_for_role",
+    }
 
 
 def test_chat_runs_tool_call_and_returns_follow_up_reply(monkeypatch):
@@ -114,6 +116,9 @@ def test_chat_runs_tool_call_and_returns_follow_up_reply(monkeypatch):
         [tool_call],
         consent_confirmed=True,
         visitor_emails={"candidate@example.com"},
+        visitor_text="Please contact me at candidate@example.com",
+        current_message="Please contact me at candidate@example.com",
+        analysis_client=None,
     )
     assert create.call_count == 1
 
@@ -128,7 +133,9 @@ def test_chat_does_not_offer_contact_tool_without_visitor_email(monkeypatch):
     )
 
     assert response.status_code == 200
-    assert "tools" not in create.call_args.kwargs
+    assert {tool["function"]["name"] for tool in create.call_args.kwargs["tools"]} == {
+        "get_contact_details", "get_skills_for_role",
+    }
 
 
 def test_chat_accepts_long_assistant_replies_in_history(monkeypatch):
@@ -171,7 +178,7 @@ def test_chat_rejects_blank_messages():
 
 
 def test_chat_rejects_oversized_messages():
-    response = client.post("/api/chat", json={"message": "x" * 4001})
+    response = client.post("/api/chat", json={"message": "x" * 12001})
 
     assert response.status_code == 422
 
@@ -285,3 +292,47 @@ def test_chat_confirms_failed_storage_from_tool_result_not_model_claim(monkeypat
 
     assert response.json()["reply"] == "I couldn't save your contact details right now. Please try again later."
     assert create.call_count == 1
+
+
+def test_chat_returns_authorized_contact_details_without_consent(monkeypatch):
+    from app.context import PUBLIC_CONTACT_DETAILS
+
+    tool_call = SimpleNamespace(id="contact", function=SimpleNamespace(name="get_contact_details", arguments="{}"))
+    create = Mock(return_value=SimpleNamespace(choices=[SimpleNamespace(
+        finish_reason="tool_calls", message=SimpleNamespace(tool_calls=[tool_call]),
+    )]))
+    use_client(monkeypatch, create)
+
+    response = client.post("/api/chat", json={"message": "How can I contact Lorenzo?"})
+
+    assert response.status_code == 200
+    assert PUBLIC_CONTACT_DETAILS["email"] in response.json()["reply"]
+    assert PUBLIC_CONTACT_DETAILS["phone"] in response.json()["reply"]
+    assert "Ghent, Belgium" in response.json()["reply"]
+
+
+@pytest.mark.parametrize("tool_name,expected", [
+    ("request_interview", "not a confirmed booking"),
+    ("leave_message", "message has been saved"),
+])
+def test_chat_confirms_new_write_tools_from_storage_result(monkeypatch, tool_name, expected):
+    tool_call = SimpleNamespace(id="write", function=SimpleNamespace(name=tool_name, arguments="{}"))
+    create = Mock(return_value=SimpleNamespace(choices=[SimpleNamespace(
+        finish_reason="tool_calls", message=SimpleNamespace(tool_calls=[tool_call]),
+    )]))
+    use_client(monkeypatch, create)
+    monkeypatch.setattr("app.main.handle_tool_calls", Mock(return_value=[{
+        "role": "tool", "content": '{"status":"saved"}', "tool_call_id": "write",
+    }]))
+
+    response = client.post("/api/chat", json={"message": "Contact me at candidate@example.com", "contactConsent": True})
+
+    assert response.status_code == 200
+    assert expected in response.json()["reply"]
+
+
+def test_chat_accepts_pasted_role_descriptions_up_to_12000_characters(monkeypatch):
+    create = Mock(return_value=model_response("A role analysis needs specific requirements."))
+    use_client(monkeypatch, create)
+
+    assert client.post("/api/chat", json={"message": "Python " * 1000}).status_code == 200
