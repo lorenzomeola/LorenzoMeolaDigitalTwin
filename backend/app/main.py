@@ -87,7 +87,19 @@ def completion_options(provider, model, tools):
     options = {"model": model, PROVIDERS[provider]["token_param"]: MAX_REPLY_TOKENS}
     if tools:
         options["tools"] = tools
+        if provider == "openai":
+            options["parallel_tool_calls"] = False
     return options
+
+
+def missing_field_reply(reason):
+    match = re.search(r"Invalid (\w+)|provide (\w+)", reason or "")
+    if "email" in (reason or "").lower() and not match:
+        return "I need a valid email address in your message before I can save this."
+    if match:
+        field = (match.group(1) or match.group(2)).replace("_", " ")
+        return f"I still need your {field}, exactly as you want it saved, before I can save this. Please send it in your next message."
+    return None
 
 
 email_pattern = re.compile(r"[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9-]+(?:\.[A-Z0-9-]+)+", re.I)
@@ -231,7 +243,9 @@ def chat(request: ChatRequest, http_request: Request):
                     "request_interview": "Your interview request has been saved for Lorenzo. This is not a confirmed booking; the preferred time is a request only.",
                     "leave_message": "Your message has been saved for Lorenzo. No automatic notification has been sent.",
                 }
-                return ChatResponse(reply=confirmations[tool_name] if result.get("status") == "saved" else CONTACT_FAILED_REPLY)
+                return ChatResponse(reply=confirmations[tool_name] if result.get("status") == "saved" else (
+                    missing_field_reply(result.get("reason")) or CONTACT_FAILED_REPLY
+                ))
             if result.get("status") != "ok":
                 return ChatResponse(reply="I couldn't retrieve that information right now. Please try again with the full details.")
             if tool_name == "get_contact_details":

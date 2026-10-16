@@ -328,6 +328,22 @@ def test_chat_ignores_contact_tool_call_when_visitor_did_not_ask_for_contact(mon
     assert "tools" not in create.call_args.kwargs
 
 
+def test_chat_asks_for_missing_name_instead_of_generic_save_failure(monkeypatch):
+    tool_call = SimpleNamespace(id="w", function=SimpleNamespace(
+        name="leave_message", arguments='{"name": "", "email": "a@b.com", "message": "Hello there"}',
+    ))
+    create = Mock(return_value=SimpleNamespace(choices=[SimpleNamespace(
+        finish_reason="tool_calls", message=SimpleNamespace(tool_calls=[tool_call]),
+    )]))
+    use_client(monkeypatch, create)
+
+    response = client.post("/api/chat", json={
+        "message": "Message: Hello there. My email is a@b.com", "contactConsent": True,
+    })
+
+    assert "I still need your name" in response.json()["reply"]
+    assert create.call_args.kwargs["parallel_tool_calls"] is False
+
 @pytest.mark.parametrize("tool_name,expected", [
     ("request_interview", "not a confirmed booking"),
     ("leave_message", "message has been saved"),

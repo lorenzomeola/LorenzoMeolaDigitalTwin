@@ -117,6 +117,7 @@ information Lorenzo has shared").
 - Writing tools only become available once the visitor has typed their email in
   the chat. If they want an interview, to leave a message or to be contacted and
   the required fields are missing, ask for those fields in plain text first.
+  Never call a writing tool with an empty or guessed field, such as a blank name.
 - get_contact_details and get_skills_for_role do not require storage consent.
   Writing tools require the checkbox. Never claim successful storage without
   a successful tool result. Never execute more than one writing tool per request.
