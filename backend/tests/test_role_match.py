@@ -66,3 +66,31 @@ def test_role_tool_rejects_description_not_provided_by_visitor():
 
     with pytest.raises(ValueError, match="visitor"):
         get_skills_for_role("Invented job description", visitor_text="Hello")
+
+
+def test_invalid_quote_gets_one_corrected_extraction_without_relaxing_validation():
+    from app.role_match import analyze_role
+
+    invalid = {"source_quote": "Invented requirement", "priority": "required", "match": "not_accredited", "evidence_ids": []}
+    valid = {"source_quote": "Python", "priority": "required", "match": "not_accredited", "evidence_ids": []}
+    client = analysis_client([invalid])
+    client.chat.completions.create.side_effect = [
+        SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps({"requirements": [item]})))])
+        for item in (invalid, valid)
+    ]
+
+    result = analyze_role("AI Engineer role. Required: Python.", client)
+
+    assert result["coverage_percent"] == 0
+    assert result["requirements"][0]["requirement"] == "Python"
+    assert client.chat.completions.create.call_count == 2
+
+
+def test_repeated_invalid_extraction_is_bounded_and_still_rejected():
+    from app.role_match import analyze_role
+
+    invalid = {"source_quote": "Invented requirement", "priority": "required", "match": "not_accredited", "evidence_ids": []}
+    client = analysis_client([invalid])
+    with pytest.raises(ValueError):
+        analyze_role("AI Engineer role. Required: Python.", client)
+    assert client.chat.completions.create.call_count == 2

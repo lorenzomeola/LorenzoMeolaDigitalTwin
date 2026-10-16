@@ -48,7 +48,7 @@ class RoleAnalysis(BaseModel):
     requirements: list[Requirement] = Field(min_length=1, max_length=30)
 
 
-def analyze_role(description, client):
+def _analyze_role(description, client, corrected=False):
     if not isinstance(description, str) or not 20 <= len(description.strip()) <= 12000:
         raise ValueError("Paste a role description between 20 and 12000 characters")
     if client is None:
@@ -77,7 +77,13 @@ def analyze_role(description, client):
                 "(an exact quote from the job description), priority (required or preferred), "
                 "match (covered, partial or not_accredited), evidence_ids (IDs from facts; "
                 "required for covered/partial, empty for not_accredited). Do not calculate a "
-                "percentage or predict hiring decisions. Facts:\n" + json.dumps(VERIFIED_FACTS)
+                     "percentage or predict hiring decisions. Facts:\n" + json.dumps(VERIFIED_FACTS)
+                     + ("\nCORRECTION: A previous extraction failed validation. Every source_quote "
+                         "must be an EXACT, unique, contiguous substring of job_description. "
+                         "Do not expand abbreviations, paraphrase quotes, add inferred skills, "
+                         "or repeat the same quote for multiple requirements. Use only supplied "
+                         "fact IDs with directly relevant evidence. Keep not_accredited evidence_ids empty."
+                         if corrected else "")
             )},
             {"role": "user", "content": json.dumps({"job_description": redact_contacts(description)})},
         ],
@@ -118,6 +124,15 @@ def analyze_role(description, client):
             "and may be incomplete; the score is indicative, not an objective hiring assessment."
         ),
     }
+
+
+def analyze_role(description, client):
+    for attempt in range(2):
+        try:
+            return _analyze_role(description, client, corrected=attempt == 1)
+        except ValueError:
+            if attempt == 1:
+                raise
 
 
 def render_analysis(result):
