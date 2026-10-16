@@ -31,3 +31,11 @@ def test_prompt_keeps_the_privacy_and_payment_boundaries():
 
     assert "Never reveal real Volvo data" in prompt
     assert "do not claim live payments" in prompt
+
+
+def test_prompt_answers_recruiters_without_unsolicited_cv_services():
+    assert "recruiters and hiring managers" in TWIN_SYSTEM_PROMPT
+    assert "Do not offer to rewrite, tailor, reformat" in TWIN_SYSTEM_PROMPT
+    assert "Stop once the question is answered" in TWIN_SYSTEM_PROMPT
+    assert "Explicitly requested summaries" in TWIN_SYSTEM_PROMPT
+    assert "ask the user if they want you to explain" not in TWIN_SYSTEM_PROMPT

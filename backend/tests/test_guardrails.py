@@ -113,3 +113,24 @@ def test_verified_public_link_is_allowed():
     client = reviewer('{"approved": true, "violations": []}')
 
     assert guard_reply(draft, "Where can I contact Lorenzo?", client) == draft
+
+
+def test_reviewer_and_repair_remove_unsolicited_cv_offers():
+    from app.guardrails import guard_reply
+
+    corrected = "Lorenzo is the sole developer and owner of AI Assets Directory."
+    client = reviewer(
+        '{"approved": false, "violations": ["style"]}',
+        corrected,
+        '{"approved": true, "violations": []}',
+    )
+    draft = corrected + " Would you like me to tailor his CV for a technical role?"
+
+    assert guard_reply(draft, "Tell me about his projects", client) == corrected
+    calls = client.chat.completions.create.call_args_list
+    policy = calls[0].kwargs["messages"][0]["content"]
+    repair = calls[1].kwargs["messages"][0]["content"]
+    assert "unsolicited CV rewriting" in policy
+    assert "unnecessary closing questions" in policy
+    assert "Explicitly requested summaries" in policy
+    assert "Remove unsolicited offers" in repair
