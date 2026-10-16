@@ -1,5 +1,7 @@
 import json
 import logging
+import re
+import unicodedata
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -7,6 +9,18 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.context import PROFILE, PROJECTS, redact_contacts
 
 logger = logging.getLogger(__name__)
+
+_TYPOGRAPHY = str.maketrans({
+    "\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"',
+    "\u2013": "-", "\u2014": "-", "\u2212": "-", "\u2026": "...",
+})
+
+
+def _normalize(text):
+    # Models normalize curly quotes, dashes and emoji presentation marks when quoting.
+    text = unicodedata.normalize("NFKC", text).translate(_TYPOGRAPHY)
+    text = re.sub(r"[\ufe0e\ufe0f\u200b-\u200d\u2060]", "", text)
+    return " ".join(text.split()).casefold()
 
 
 def _reject(code, reason):
@@ -45,7 +59,24 @@ class Requirement(BaseModel):
 
 class RoleAnalysis(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    requirements: list[Requirement] = Field(min_length=1, max_length=30)
+    requirements: list[Requirement] = Field(min_length=1, max_length=40)
+
+
+def _verified_quote(quote, source):
+    """Return (normalized, display) for a quote found in the source, else None.
+
+    A heading joined to a list item ('Familiarity with: Alignment strategies') is not contiguous
+    in the text, so the longest verified tail is kept instead.
+    """
+    words = quote.split()
+    for start in range(len(words)):
+        tail = " ".join(words[start:])
+        normalized = _normalize(tail)
+        if normalized in source:
+            if start and (len(normalized) < 5 or len(tail) < 0.3 * len(quote)):
+                return None
+            return normalized, tail
+    return None
 
 
 class InvalidQuotes(ValueError):
@@ -60,7 +91,7 @@ def _analyze_role(description, client, corrected=False, invalid_quotes=()):
     if client is None:
         raise RuntimeError("Role analysis is unavailable")
     response = client.chat.completions.create(
-        model="gpt-4.1-mini", max_tokens=3500, temperature=0,
+        model="gpt-4.1-mini", max_tokens=5000, temperature=0,
         response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": (
@@ -82,7 +113,7 @@ def _analyze_role(description, client, corrected=False, invalid_quotes=()):
                 "requiring independent expert implementation. No performance metrics have "
                 "been validated for Volvo's project. Mark covered only with directly relevant "
                 "evidence, partial with limited relevant evidence, otherwise not_accredited. "
-                "Return JSON with requirements array only. Each entry must contain source_quote "
+                "Return JSON with requirements array only, at most 40 entries. Each entry must contain source_quote "
                 "(an exact quote from the job description), priority (required or preferred), "
                 "match (covered, partial or not_accredited), evidence_ids (at most 5 IDs from facts; "
                 "required for covered/partial, empty for not_accredited). Do not calculate a "
@@ -104,16 +135,21 @@ def _analyze_role(description, client, corrected=False, invalid_quotes=()):
     except ValueError:
         logger.warning("role_analysis_rejected code=invalid_structure")
         raise
-    source = " ".join(redact_contacts(description).split()).casefold()
-    normalized = [" ".join(item.source_quote.split()).casefold() for item in analysis.requirements]
-    invalid = [item.source_quote[:200] for item, quote in zip(analysis.requirements, normalized) if quote not in source]
+    source = _normalize(redact_contacts(description))
+    quotes = []
+    invalid = []
+    for item in analysis.requirements:
+        quote = _verified_quote(item.source_quote, source)
+        if quote is None:
+            invalid.append(item.source_quote[:200])
+        quotes.append(quote)
     if invalid:
         logger.warning("role_analysis_rejected code=invalid_or_duplicate_quote")
         raise InvalidQuotes(invalid)
     seen = set()
     requirements = []
     earned = total = 0
-    for requirement, quote in zip(analysis.requirements, normalized):
+    for requirement, (quote, display) in zip(analysis.requirements, quotes):
         if quote in seen:
             continue
         seen.add(quote)
@@ -125,7 +161,7 @@ def _analyze_role(description, client, corrected=False, invalid_quotes=()):
         total += weight
         earned += weight * {"covered": 1, "partial": 0.5, "not_accredited": 0}[requirement.match]
         requirements.append({
-            "requirement": requirement.source_quote, "priority": requirement.priority,
+            "requirement": display, "priority": requirement.priority,
             "match": requirement.match,
             "evidence": [VERIFIED_FACTS[identifier] for identifier in requirement.evidence_ids[:5]],
         })

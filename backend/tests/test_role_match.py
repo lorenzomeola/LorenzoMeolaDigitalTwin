@@ -110,3 +110,16 @@ def test_repeated_invalid_extraction_is_bounded_and_still_rejected():
     with pytest.raises(ValueError):
         analyze_role("AI Engineer role. Required: Python.", client)
     assert client.chat.completions.create.call_count == 2
+
+def test_curly_punctuation_and_heading_joined_quotes_are_verified_against_the_text():
+    from app.role_match import analyze_role
+
+    text = "You\u2019ll build agents.\nFamiliarity with:\nPrompt injection\nAlignment strategies"
+    items = [
+        {"source_quote": "You'll build agents", "priority": "required", "match": "not_accredited", "evidence_ids": []},
+        {"source_quote": "Familiarity with: Alignment strategies", "priority": "preferred", "match": "not_accredited", "evidence_ids": []},
+    ]
+
+    result = analyze_role(text, analysis_client(items))
+
+    assert [item["requirement"] for item in result["requirements"]] == ["You'll build agents", "Alignment strategies"]

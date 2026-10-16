@@ -55,6 +55,8 @@ PROVIDERS = {
     },
 }
 MAX_REPLY_TOKENS = 2000
+# A question about fit is not a pasted job description; smaller models call the tool anyway.
+MIN_ROLE_DESCRIPTION_CHARS = 200
 
 
 @lru_cache(maxsize=8)
@@ -115,6 +117,11 @@ def tool_text(tool_name, result):
             return SAVE_CONFIRMATIONS[tool_name]
         return missing_field_reply(result.get("reason")) or CONTACT_FAILED_REPLY
     if result.get("status") != "ok":
+        if tool_name == "get_skills_for_role":
+            return (
+                "I couldn't analyze that job description. Please try again, ideally pasting only "
+                "the responsibilities and requirements as plain text."
+            )
         return "I couldn't retrieve that information right now. Please try again with the full details."
     return f"Lorenzo Meola\n\nEmail: {result['email']}\n\nPhone: {result['phone']}\n\nLocation: {result['location']}"
 
@@ -260,6 +267,8 @@ def chat(request: ChatRequest, http_request: Request):
                 if call.function.name in seen:
                     continue
                 if call.function.name == "get_contact_details" and not contact_intent.search(request.message):
+                    continue
+                if call.function.name == "get_skills_for_role" and len(request.message.strip()) < MIN_ROLE_DESCRIPTION_CHARS:
                     continue
                 seen.add(call.function.name)
                 tool_calls.append(call)
