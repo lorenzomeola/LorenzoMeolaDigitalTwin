@@ -1,0 +1,133 @@
+[
+  {
+    "slug": "volvo-cca-fleet-analytics",
+    "title": "CCA Fleet Analytics & Predictive Maintenance",
+    "status": "Ongoing",
+    "statusShort": "In progress",
+    "kind": "Professional - Volvo Group",
+    "summary": "Fleet analytics application combining vehicle diagnostics, repairs, and vehicle-use data to explore patterns and early-detection strategies for CCA-related repairs.",
+    "contribution": "Developed the analytical backend, REST API, data-visualization interface, alert-rule simulation and optimization, and a machine-learning module for training and evaluating predictive classifiers.",
+    "contributionConfirmed": true,
+    "technology": [
+      "Python",
+      "FastAPI",
+      "Pandas",
+      "NumPy",
+      "SQL Server",
+      "SQLAlchemy",
+      "pyodbc",
+      "HTML",
+      "CSS",
+      "JavaScript",
+      "Plotly.js",
+      "scikit-learn"
+    ],
+    "evidence": [
+      "Code includes analytical views and REST endpoints for data queries and simulations.",
+      "Alert simulation supports DTC codes, thresholds, time windows, and configurable combination logic.",
+      "Optimization compares the trade-off between identifying repairs and limiting false alarms.",
+      "Exploratory classifiers include Random Forest, Gradient Boosting, and logistic regression.",
+      "No validated model-performance, breakdown-reduction, or cost-saving claims are available."
+    ],
+    "privacyNotes": [
+      "Do not publish real Volvo data, screenshots, or internal links.",
+      "Any public demo must use synthetic data.",
+      "No verified public project link is currently available."
+    ],
+    "highlights": [
+      "Alert-rule simulator: configure DTC codes, thresholds, time windows and combination logic, then classify alerts by their timing relative to repairs.",
+      "Rule optimization to compare early detection against false alarms.",
+      "Exploratory classifiers (Random Forest, Gradient Boosting, logistic regression) for repair prediction.",
+      "Built on internal fleet data, so no data, screenshots or results are published here."
+    ],
+    "links": []
+  },
+  {
+    "slug": "ai-assets-directory",
+    "title": "AI Assets Directory",
+    "status": "Live in production and actively maintained",
+    "statusShort": "Live",
+    "kind": "Personal project",
+    "summary": "Directory and learning hub for Claude Skills, MCP servers, GitHub Copilot agents, AI workflows, and Cursor Rules, with source, license, and installation guidance where available.",
+    "contribution": "Sole developer and owner. Built the entire product on my own.",
+    "contributionConfirmed": true,
+    "technology": [
+      "Next.js 16",
+      "React 19",
+      "TypeScript",
+      "Tailwind CSS 4",
+      "Velite",
+      "cmdk",
+      "next-themes",
+      "Lucide",
+      "Vercel Analytics",
+      "Upstash Redis",
+      "Vercel KV"
+    ],
+    "evidence": [
+      "Search and filters across listings by type, category, and tool.",
+      "Category and detail pages show source, license, compatibility, verification, and installation guidance where available.",
+      "Copyable installation blocks and Ctrl+K command palette.",
+      "Learning guides, blog, contributor submissions, upvotes, and email sign-ups."
+    ],
+    "privacyNotes": [],
+    "highlights": [
+      "Search and filters by asset type, category and tool.",
+      "Detail pages with source, license, compatibility and installation instructions where available.",
+      "Copyable install blocks and a Ctrl+K command palette.",
+      "Learning guides, a blog and contributor submissions."
+    ],
+    "links": [
+      { "label": "Live site", "url": "https://aiassetsdirectory.com/" },
+      { "label": "Repository", "url": "https://github.com/lorenzomeola/AI_assets_directory" },
+      { "label": "Guides", "url": "https://aiassetsdirectory.com/learn" }
+    ]
+  },
+  {
+    "slug": "matchkeeper",
+    "title": "MatchKeeper | London Goalkeeper Marketplace",
+    "status": "Free-beta application deployed to staging and in release preparation",
+    "statusShort": "Free beta - staging",
+    "kind": "Personal product",
+    "summary": "Full-stack marketplace connecting amateur football teams and players who need a goalkeeper with freelance goalkeepers available for matches in London.",
+    "contribution": "Sole creator and owner. Led the product concept, UX/UI design, technical architecture, and end-to-end development.",
+    "contributionConfirmed": true,
+    "technology": [
+      "Next.js 16",
+      "React 19",
+      "TypeScript",
+      "Tailwind CSS 4",
+      "Floodlight design system",
+      "Supabase Postgres",
+      "Supabase Auth",
+      "Supabase Realtime",
+      "Supabase Storage",
+      "Mapbox",
+      "Resend",
+      "Vercel",
+      "Drizzle Kit",
+      "Stripe Connect (inactive paid-booking mode)"
+    ],
+    "evidence": [
+      "Player and goalkeeper dashboards, match creation and discovery, applications, and team selection.",
+      "Manually reviewed profiles, in-app chat, maps, calendars, check-in, reviews, match history, and admin moderation.",
+      "Supplied-account checks verified both dashboards and the player calendar on staging; these checks do not establish adoption or business impact.",
+      "Stripe Connect paid bookings are implemented and sandbox-tested but inactive; no real-money or production-payment verification is available."
+    ],
+    "privacyNotes": [
+      "Do not claim that MatchKeeper processes live payments.",
+      "Do not claim broader adoption or business impact without evidence.",
+      "The production domain currently serves an earlier validation landing page."
+    ],
+    "highlights": [
+      "Role-specific dashboards for players and goalkeepers.",
+      "Match creation, nearby discovery, applications and team selection.",
+      "In-app chat, maps, calendars, match check-in, reviews and admin moderation.",
+      "Paid bookings through Stripe Connect are built and sandbox-tested but switched off; the beta is free."
+    ],
+    "links": [
+      { "label": "Staging app", "url": "https://staging.matchkeeperuk.com/home" },
+      { "label": "Repository", "url": "https://github.com/lorenzomeola/MatchKeeper/tree/staging" }
+    ]
+  }
+]

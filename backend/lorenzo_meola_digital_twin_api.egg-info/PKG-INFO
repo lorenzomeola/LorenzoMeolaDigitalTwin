@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: lorenzo-meola-digital-twin-api
+Version: 0.1.0
+Requires-Python: >=3.12
+Requires-Dist: fastapi
+Requires-Dist: uvicorn[standard]
+Requires-Dist: openai
+Requires-Dist: psycopg[binary]
+Requires-Dist: pypdf
+Requires-Dist: python-dotenv
+Requires-Dist: truststore
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: httpx; extra == "dev"

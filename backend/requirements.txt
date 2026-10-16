@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+openai
+psycopg[binary]
+pypdf
+python-dotenv
+truststore
+pytest
+httpx

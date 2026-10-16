@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["app"]
+
+[project]
+name = "lorenzo-meola-digital-twin-api"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "openai",
+    "psycopg[binary]",
+    "pypdf",
+    "python-dotenv",
+    "truststore",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "httpx"]
+
+[tool.vercel]
+entrypoint = "app.main:app"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

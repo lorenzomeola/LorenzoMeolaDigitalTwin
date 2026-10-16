@@ -1,0 +1,13 @@
+pyproject.toml
+app/__init__.py
+app/context.py
+app/main.py
+app/tools.py
+lorenzo_meola_digital_twin_api.egg-info/PKG-INFO
+lorenzo_meola_digital_twin_api.egg-info/SOURCES.txt
+lorenzo_meola_digital_twin_api.egg-info/dependency_links.txt
+lorenzo_meola_digital_twin_api.egg-info/requires.txt
+lorenzo_meola_digital_twin_api.egg-info/top_level.txt
+tests/test_chat.py
+tests/test_contact_tool.py
+tests/test_context.py
