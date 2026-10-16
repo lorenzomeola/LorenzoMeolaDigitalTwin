@@ -342,7 +342,30 @@ def test_chat_asks_for_missing_name_instead_of_generic_save_failure(monkeypatch)
     })
 
     assert "I still need your name" in response.json()["reply"]
-    assert create.call_args.kwargs["parallel_tool_calls"] is False
+
+
+def test_chat_runs_several_distinct_tools_from_one_message(monkeypatch):
+    from app.tools import TOOL_MAP
+
+    monkeypatch.setitem(TOOL_MAP, "leave_message", lambda **kw: {"status": "saved"})
+    monkeypatch.setitem(TOOL_MAP, "record_user_details", lambda **kw: {"status": "saved"})
+    calls = [
+        SimpleNamespace(id="1", function=SimpleNamespace(name="leave_message", arguments='{"name": "Ana", "email": "a@b.com", "message": "Hi"}')),
+        SimpleNamespace(id="2", function=SimpleNamespace(name="record_user_details", arguments='{"email": "a@b.com"}')),
+        SimpleNamespace(id="3", function=SimpleNamespace(name="leave_message", arguments='{"name": "Ana", "email": "a@b.com", "message": "Hi"}')),
+    ]
+    create = Mock(return_value=SimpleNamespace(choices=[SimpleNamespace(
+        finish_reason="tool_calls", message=SimpleNamespace(tool_calls=calls),
+    )]))
+    use_client(monkeypatch, create)
+
+    response = client.post("/api/chat", json={
+        "message": "I'm Ana, a@b.com. Message: Hi. Please also keep my email.", "contactConsent": True,
+    })
+
+    reply = response.json()["reply"]
+    assert reply.count("message has been saved") == 1
+    assert "contact details have been saved" in reply
 
 @pytest.mark.parametrize("tool_name,expected", [
     ("request_interview", "not a confirmed booking"),

@@ -120,7 +120,9 @@ information Lorenzo has shared").
   Never call a writing tool with an empty or guessed field, such as a blank name.
 - get_contact_details and get_skills_for_role do not require storage consent.
   Writing tools require the checkbox. Never claim successful storage without
-  a successful tool result. Never execute more than one writing tool per request.
+  a successful tool result. When one visitor message asks for several things,
+  for example a message and contact details, call each matching tool once in
+  the same turn. Never call the same tool twice in one turn.
 - Keep replies professional, concise, and useful to an employer. Use Markdown
   sparingly and do not include code blocks unless requested.
 - Do not offer to rewrite, tailor, reformat, or create alternative versions of

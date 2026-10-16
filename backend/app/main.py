@@ -87,8 +87,6 @@ def completion_options(provider, model, tools):
     options = {"model": model, PROVIDERS[provider]["token_param"]: MAX_REPLY_TOKENS}
     if tools:
         options["tools"] = tools
-        if provider == "openai":
-            options["parallel_tool_calls"] = False
     return options
 
 
@@ -101,6 +99,26 @@ def missing_field_reply(reason):
         return f"I still need your {field}, exactly as you want it saved, before I can save this. Please send it in your next message."
     return None
 
+
+SAVE_CONFIRMATIONS = {
+    "record_user_details": CONTACT_SAVED_REPLY,
+    "request_interview": "Your interview request has been saved for Lorenzo. This is not a confirmed booking; the preferred time is a request only.",
+    "leave_message": "Your message has been saved for Lorenzo. No automatic notification has been sent.",
+}
+
+
+def tool_reply(tool_name, result, question):
+    if tool_name in WRITE_TOOLS:
+        if result.get("status") == "saved":
+            return SAVE_CONFIRMATIONS[tool_name]
+        return missing_field_reply(result.get("reason")) or CONTACT_FAILED_REPLY
+    if result.get("status") != "ok":
+        return "I couldn't retrieve that information right now. Please try again with the full details."
+    if tool_name == "get_contact_details":
+        return f"Lorenzo Meola\n\nEmail: {result['email']}\n\nPhone: {result['phone']}\n\nLocation: {result['location']}"
+    from app.role_match import render_analysis
+
+    return guard_reply(render_analysis(result), question, review_client(), verified_analysis=result)
 
 email_pattern = re.compile(r"[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9-]+(?:\.[A-Z0-9-]+)+", re.I)
 # Smaller models call get_contact_details for unrelated questions, so the visitor must ask for contact data.
@@ -207,26 +225,24 @@ def chat(request: ChatRequest, http_request: Request):
 
     try:
         response = client.chat.completions.create(messages=messages, **options)
-        first_call = (
-            response.choices[0].message.tool_calls
-            if response.choices[0].finish_reason == "tool_calls" else None
-        )
-        if (
-            first_call
-            and len(first_call) == 1
-            and first_call[0].function.name == "get_contact_details"
-            and not contact_intent.search(request.message)
-        ):
-            response = client.chat.completions.create(
-                messages=messages, **completion_options(request.provider, request.model, None),
-            )
+        tool_calls = []
         if response.choices[0].finish_reason == "tool_calls":
-            tool_calls = response.choices[0].message.tool_calls
-            if (
-                len(tool_calls) != 1
-                or tool_calls[0].function.name not in {tool["function"]["name"] for tool in offered_tools}
-            ):
+            allowed = {tool["function"]["name"] for tool in offered_tools}
+            if any(call.function.name not in allowed for call in response.choices[0].message.tool_calls):
                 raise RuntimeError("Tool call is not allowed")
+            seen = set()
+            for call in response.choices[0].message.tool_calls:
+                if call.function.name in seen:
+                    continue
+                if call.function.name == "get_contact_details" and not contact_intent.search(request.message):
+                    continue
+                seen.add(call.function.name)
+                tool_calls.append(call)
+            if not tool_calls:
+                response = client.chat.completions.create(
+                    messages=messages, **completion_options(request.provider, request.model, None),
+                )
+        if tool_calls:
             results = handle_tool_calls(
                 tool_calls,
                 consent_confirmed=request.contactConsent,
@@ -235,29 +251,11 @@ def chat(request: ChatRequest, http_request: Request):
                 current_message=request.message,
                 analysis_client=review_client(),
             )
-            tool_name = tool_calls[0].function.name
-            result = json.loads(results[0]["content"]) if results else {"status": "error"}
-            if tool_name in WRITE_TOOLS:
-                confirmations = {
-                    "record_user_details": CONTACT_SAVED_REPLY,
-                    "request_interview": "Your interview request has been saved for Lorenzo. This is not a confirmed booking; the preferred time is a request only.",
-                    "leave_message": "Your message has been saved for Lorenzo. No automatic notification has been sent.",
-                }
-                return ChatResponse(reply=confirmations[tool_name] if result.get("status") == "saved" else (
-                    missing_field_reply(result.get("reason")) or CONTACT_FAILED_REPLY
-                ))
-            if result.get("status") != "ok":
-                return ChatResponse(reply="I couldn't retrieve that information right now. Please try again with the full details.")
-            if tool_name == "get_contact_details":
-                return ChatResponse(reply=(
-                    f"Lorenzo Meola\n\nEmail: {result['email']}\n\nPhone: {result['phone']}\n\nLocation: {result['location']}"
-                ))
-            from app.role_match import render_analysis
-
-            return ChatResponse(reply=guard_reply(
-                render_analysis(result), request.message, review_client(), verified_analysis=result,
-            ))
-
+            parts = [
+                tool_reply(call.function.name, json.loads(item["content"]), request.message)
+                for call, item in zip(tool_calls, results)
+            ]
+            return ChatResponse(reply="\n\n".join(parts))
         reply = response.choices[0].message.content
         if not reply:
             raise RuntimeError("The model returned an empty reply")
