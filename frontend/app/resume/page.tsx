@@ -1,32 +1,33 @@
 import type { Metadata } from "next";
+import { Download } from "lucide-react";
 import { profile } from "@/lib/content";
 
 export const metadata: Metadata = { title: `Resume - ${profile.name}` };
 
 export default function ResumePage() {
   return (
-    <main className="mx-auto max-w-5xl px-6 pb-16 pt-14 sm:pt-20">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="font-display text-5xl tracking-tight sm:text-6xl">Resume</h1>
+    <main id="main-content" className="site-shell page-content">
+      <div className="section-topline">
+        <div><p className="eyebrow">Career & qualifications</p><h1 className="page-title mt-3">Resume</h1></div>
         <a
           href="/cv.pdf"
           download
-          className="rounded-full border border-rule px-5 py-2.5 text-sm transition hover:border-accent hover:text-accent"
+          className="action-button secondary"
         >
-          Download CV (PDF)
+          <Download size={16} aria-hidden="true" /> Download CV
         </a>
       </div>
 
-      <section className="mt-14">
+      <section className="section-band">
         <SectionTitle>Experience</SectionTitle>
-        <ol className="mt-6 space-y-10">
+        <ol className="resume-timeline">
           {profile.experience.map((job) => (
-            <li key={`${job.company}-${job.period}`} className="grid gap-3 sm:grid-cols-[11rem_1fr] sm:gap-8">
+            <li key={`${job.company}-${job.period}`} className="resume-item">
               <p className="font-mono text-xs text-ink-soft sm:pt-2">{job.period}</p>
               <div>
-                <h3 className="font-display text-2xl leading-snug">{job.role}</h3>
-                <p className="text-ink-soft">{job.company}</p>
-                <ul className="mt-3 list-disc space-y-2 pl-5 leading-relaxed">
+                <h3 className="resume-role">{job.role}</h3>
+                <p className="mt-1 text-sm text-signal">{job.company}</p>
+                <ul className="resume-highlights">
                   {job.highlights.map((highlight) => (
                     <li key={highlight}>{highlight}</li>
                   ))}
@@ -37,15 +38,15 @@ export default function ResumePage() {
         </ol>
       </section>
 
-      <section className="mt-16">
+      <section className="section-band">
         <SectionTitle>Education</SectionTitle>
         <ul className="mt-6 space-y-6">
           {profile.education.map((item) => (
             <li key={item.institution} className="grid gap-1 sm:grid-cols-[11rem_1fr] sm:gap-8">
               <p className="font-mono text-xs text-ink-soft sm:pt-1.5">{item.period}</p>
               <div>
-                <h3 className="font-display text-xl">{item.field}</h3>
-                <p className="text-ink-soft">
+                <h3 className="resume-role">{item.field}</h3>
+                <p className="mt-1 text-sm text-ink-soft">
                   {item.institution}, {item.location}
                 </p>
               </div>
@@ -54,15 +55,15 @@ export default function ResumePage() {
         </ul>
       </section>
 
-      <section className="mt-16">
+      <section className="section-band">
         <SectionTitle>Skills</SectionTitle>
         <div className="mt-6 grid gap-8 sm:grid-cols-2">
           {profile.skills.map((group) => (
             <div key={group.group}>
-              <h3 className="font-mono text-xs uppercase tracking-wider text-ink-soft">{group.group}</h3>
+              <h3 className="text-sm font-medium text-ink">{group.group}</h3>
               <ul className="mt-3 flex flex-wrap gap-2">
                 {group.items.map((item) => (
-                  <li key={item} className="rounded-full border border-rule bg-paper-2 px-3 py-1.5 text-sm">
+                  <li key={item} className="tech-tag">
                     {item}
                   </li>
                 ))}
@@ -72,7 +73,7 @@ export default function ResumePage() {
         </div>
       </section>
 
-      <section className="mt-16 grid gap-10 sm:grid-cols-2">
+      <section className="section-band grid gap-8 sm:grid-cols-2">
         <div>
           <SectionTitle>Languages</SectionTitle>
           <ul className="mt-6 space-y-2">
@@ -101,7 +102,7 @@ export default function ResumePage() {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="border-b border-rule pb-3 font-mono text-xs uppercase tracking-[0.2em] text-accent">
+    <h2 className="eyebrow pb-2">
       {children}
     </h2>
   );

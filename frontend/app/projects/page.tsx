@@ -1,45 +1,44 @@
 import type { Metadata } from "next";
+import { ArrowUpRight, LockKeyhole } from "lucide-react";
 import { profile, projects } from "@/lib/content";
 
 export const metadata: Metadata = { title: `Projects - ${profile.name}` };
 
 export default function ProjectsPage() {
   return (
-    <main className="mx-auto max-w-5xl px-6 pb-16 pt-14 sm:pt-20">
-      <h1 className="font-display text-5xl tracking-tight sm:text-6xl">Projects</h1>
-      <p className="mt-5 max-w-2xl text-lg leading-relaxed text-ink-soft">
-        Three things I&apos;ve built or am building. Each one is labelled honestly: what it does, what state it is in,
-        and what I did.
+    <main id="main-content" className="site-shell page-content">
+      <p className="eyebrow">Software I work on</p>
+      <h1 className="page-title mt-3">Projects</h1>
+      <p className="body-copy mt-4 text-[15px]">
+        Internal analytics at Volvo, a directory of AI tools, and a football marketplace.
+        My contribution and the current state of each project are listed below.
       </p>
 
-      <div className="mt-14 space-y-10">
-        {projects.map((project) => (
-          <article key={project.slug} className="rounded-3xl border border-rule bg-paper-2/60 p-6 sm:p-9">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[11px] uppercase tracking-wider">
-              <span className="text-ink-soft">{project.kind}</span>
-              <span className="rounded-full bg-accent px-3 py-1 text-accent-ink">{project.statusShort}</span>
-            </div>
-            <h2 className="mt-4 font-display text-3xl leading-tight sm:text-4xl">{project.title}</h2>
-            <p className="mt-4 max-w-3xl text-lg leading-relaxed text-ink-soft">{project.summary}</p>
+      <div className="project-list">
+        {projects.map((project, index) => (
+          <article id={project.slug} key={project.slug} className="project-entry">
+            <div className="project-meta"><span className="project-index">0{index + 1}</span><span>{project.kind}</span><span className="project-status">{project.statusShort}</span></div>
+            <h2 className="project-title">{project.title}</h2>
+            <p className="body-copy mt-4 text-[15px]">{project.summary}</p>
 
             {project.contributionConfirmed ? (
-              <p className="mt-5 max-w-3xl leading-relaxed">
-                <span className="font-mono text-xs uppercase tracking-wider text-accent">My part - </span>
+              <p className="project-contribution">
+                <span className="text-accent">My work: </span>
                 {project.contribution}
               </p>
             ) : null}
 
-            <ul className="mt-6 grid gap-x-8 gap-y-3 sm:grid-cols-2">
+            <ul className="project-highlights">
               {project.highlights.map((highlight) => (
-                <li key={highlight} className="relative pl-5 leading-relaxed before:absolute before:left-0 before:top-[0.7em] before:h-1.5 before:w-1.5 before:rounded-full before:bg-accent">
-                  {highlight}
+                <li key={highlight}>
+                  <span aria-hidden="true" className="project-bullet" />{highlight}
                 </li>
               ))}
             </ul>
 
             <ul className="mt-7 flex flex-wrap gap-2">
               {project.technology.map((item) => (
-                <li key={item} className="rounded-full border border-rule px-3 py-1 font-mono text-xs text-ink-soft">
+                <li key={item} className="tech-tag">
                   {item}
                 </li>
               ))}
@@ -53,15 +52,15 @@ export default function ProjectsPage() {
                     href={link.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="font-medium text-accent underline underline-offset-4"
+                    className="text-link"
                   >
-                    {link.label} &rarr;
+                    {link.label} <ArrowUpRight size={15} aria-hidden="true" />
                   </a>
                 ))}
               </p>
             ) : (
-              <p className="mt-7 font-mono text-xs text-ink-soft">
-                Internal Volvo Group work - no public link, data or screenshots.
+              <p className="project-private-note">
+                <LockKeyhole size={14} aria-hidden="true" /> Internal Volvo Group work. No public data, screenshots or results.
               </p>
             )}
           </article>

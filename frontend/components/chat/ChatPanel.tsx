@@ -3,24 +3,32 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ArrowUp, ArrowUpRight, Bot, ChevronDown, RotateCcw, UserRound, X } from "lucide-react";
 import { profile } from "@/lib/content";
 import { useChat } from "./ChatProvider";
 
 const SUGGESTIONS = [
-  "What is your background?",
-  "Tell me about the MatchKeeper project",
-  "What do you do at Volvo Group?",
-  "Which AI tools do you work with?",
+  "What has Lorenzo built?",
+  "How does he work with AI?",
+  "What does he do at Volvo?",
+  "What experience fits an AI Engineer role?",
 ];
 
 export function ChatPanel({ onClose }: { onClose?: () => void }) {
   const chat = useChat();
   const [draft, setDraft] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    endRef.current?.scrollIntoView({ behavior: "instant", block: "end" });
   }, [chat.messages.length, chat.sending, chat.error]);
+
+  useEffect(() => {
+    if (!inputRef.current) return;
+    inputRef.current.style.height = "auto";
+    inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 144)}px`;
+  }, [draft]);
 
   const hasProviders = chat.providers === null || chat.providers.length > 0;
   const currentProvider = chat.providers?.find((entry) => entry.id === chat.provider);
@@ -34,29 +42,29 @@ export function ChatPanel({ onClose }: { onClose?: () => void }) {
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault();
       submit();
     }
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-paper text-ink">
-      <header className="flex items-center justify-between gap-4 border-b border-rule px-5 py-3.5 sm:px-8">
-        <div>
-          <p className="font-display text-xl leading-none">Ask {profile.name.split(" ")[0]}&apos;s twin</p>
-          <p className="mt-1 font-mono text-[11px] uppercase tracking-wider text-ink-soft">
-            AI assistant - not Lorenzo himself
-          </p>
+    <div className="chat-workspace">
+      <header className="chat-header">
+        <div className="chat-identity">
+          <span className="chat-identity-icon"><Bot size={21} aria-hidden="true" /></span>
+          <div><p className="chat-heading">Lorenzo&apos;s digital twin</p><p className="chat-subheading">AI assistant, not Lorenzo</p></div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="chat-header-actions">
           {chat.messages.length > 0 ? (
             <button
               type="button"
               onClick={chat.reset}
-              className="rounded-full border border-rule px-3 py-1.5 font-mono text-xs text-ink-soft transition hover:border-accent hover:text-accent"
+              aria-label="New chat"
+              title="New chat"
+              className="icon-button"
             >
-              New chat
+              <RotateCcw aria-hidden="true" />
             </button>
           ) : null}
           {onClose ? (
@@ -64,35 +72,37 @@ export function ChatPanel({ onClose }: { onClose?: () => void }) {
               type="button"
               onClick={onClose}
               aria-label="Close chat"
-              className="grid h-9 w-9 place-items-center rounded-full border border-rule text-lg leading-none transition hover:border-accent hover:text-accent"
+              title="Close chat"
+              className="icon-button"
             >
-              <span aria-hidden="true">&times;</span>
+              <X aria-hidden="true" />
             </button>
           ) : null}
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-6 sm:px-8" aria-live="polite">
-        <div className="mx-auto flex max-w-3xl flex-col gap-5">
-          <Bubble role="assistant">
-            Hi, I&apos;m an AI twin of {profile.name}. Ask me about his work, projects and skills, and I&apos;ll
-            only answer from what he has actually shared.
-          </Bubble>
-
+      <div className="chat-scroll" aria-live="polite" aria-label="Conversation" role="log" aria-relevant="additions text">
+        <div className="chat-thread">
           {chat.messages.length === 0 ? (
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Suggested questions">
+            <section className="chat-welcome">
+              <p className="eyebrow">{profile.name} / {profile.location}</p>
+              <h1>His work, in context<span>.</span></h1>
+              <p className="chat-welcome-copy">Automotive engineering. An MSc in AI. Products built with AI coding agents.</p>
+              <div className="chat-suggestions" role="group" aria-label="Suggested questions">
               {SUGGESTIONS.map((suggestion) => (
                 <button
                   key={suggestion}
                   type="button"
                   disabled={chat.sending || !hasProviders}
                   onClick={() => void chat.send(suggestion)}
-                  className="rounded-full border border-rule bg-paper-2 px-4 py-2 text-left text-sm transition hover:border-accent hover:text-accent disabled:opacity-50"
+                  className="chat-suggestion"
                 >
                   {suggestion}
+                  <ArrowUpRight size={15} aria-hidden="true" />
                 </button>
               ))}
-            </div>
+              </div>
+            </section>
           ) : null}
 
           {chat.messages.map((message) => (
@@ -109,7 +119,7 @@ export function ChatPanel({ onClose }: { onClose?: () => void }) {
 
           {chat.sending ? (
             <Bubble role="assistant">
-              <span className="inline-flex gap-1.5 py-1" role="status" aria-label="The twin is typing">
+              <span className="inline-flex items-center gap-2 py-1" role="status" aria-label="The twin is preparing a response">
                 {[0, 1, 2].map((index) => (
                   <span
                     key={index}
@@ -117,85 +127,90 @@ export function ChatPanel({ onClose }: { onClose?: () => void }) {
                     style={{ animationDelay: `${index * 160}ms` }}
                   />
                 ))}
+                <span className="ml-2 text-xs text-ink-soft">Preparing a response</span>
               </span>
             </Bubble>
           ) : null}
 
           {chat.error ? (
-            <p role="alert" className="rounded-xl border border-accent/50 bg-paper-2 px-4 py-3 text-sm">
+            <p role="alert" className="chat-notice">
               {chat.error}
             </p>
           ) : null}
 
           {chat.providers !== null && chat.providers.length === 0 ? (
-            <p role="alert" className="rounded-xl border border-rule bg-paper-2 px-4 py-3 text-sm">
-              The chat service is offline right now. You can still browse the site and download the CV.
+            <p role="alert" className="chat-notice">
+              The chat is unavailable. Lorenzo&apos;s CV and project pages are still available.
             </p>
           ) : null}
           <div ref={endRef} />
         </div>
       </div>
 
-      <form onSubmit={submit} className="border-t border-rule px-5 py-4 sm:px-8">
-        <div className="mx-auto max-w-3xl">
-          <div className="flex items-end gap-3 rounded-2xl border border-rule bg-paper-2 p-2 focus-within:border-accent">
+      <form onSubmit={submit} className="chat-composer">
+        <div className="chat-composer-inner">
+          <div className="chat-input-row">
             <textarea
+              ref={inputRef}
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={onKeyDown}
               rows={1}
               maxLength={12000}
-              placeholder="Ask anything about Lorenzo's work..."
+              placeholder="Ask about Lorenzo or paste a role..."
               aria-label="Message"
-              className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-3 py-2.5 text-[15px] outline-none placeholder:text-ink-soft"
+              enterKeyHint="send"
+              className="chat-input"
             />
             <button
               type="submit"
               disabled={!draft.trim() || chat.sending || !hasProviders}
-              className="h-11 rounded-xl bg-accent px-5 text-sm font-medium text-accent-ink transition hover:opacity-90 disabled:opacity-40"
+              aria-label="Send message"
+              title="Send message"
+              className="chat-send"
             >
-              Send
+              <ArrowUp size={20} aria-hidden="true" />
             </button>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2 font-mono text-[11px] text-ink-soft">
-            <label className="flex items-center gap-2">
+          <div className="chat-composer-options">
+            <label className="chat-consent">
               <input
                 type="checkbox"
                 checked={chat.contactConsent}
                 onChange={(event) => chat.setContactConsent(event.target.checked)}
-                className="accent-[var(--accent)]"
+                className="chat-consent-checkbox"
               />
-              <span>Allow the twin to save my details, messages and interview requests so Lorenzo can reply</span>
+              <span>I agree to saving my details, messages and interview requests so Lorenzo can reply.</span>
             </label>
 
             {chat.providers && chat.providers.length > 0 ? (
-              <span className="flex items-center gap-2">
-                <select
+              <div className="chat-model-controls">
+                <label className="chat-select-wrap"><span className="sr-only">AI provider</span><select
                   aria-label="AI provider"
                   value={chat.provider}
                   onChange={(event) => chat.selectProvider(event.target.value)}
-                  className="rounded-md border border-rule bg-paper px-2 py-1"
+                  className="chat-select chat-provider-select"
                 >
                   {chat.providers.map((entry) => (
                     <option key={entry.id} value={entry.id}>
                       {entry.label}
                     </option>
                   ))}
-                </select>
-                <select
+                </select><ChevronDown size={13} aria-hidden="true" /></label>
+                <label className="chat-select-wrap chat-model-wrap"><span className="sr-only">Model</span><select
                   aria-label="Model"
                   value={chat.model}
                   onChange={(event) => chat.selectModel(event.target.value)}
-                  className="max-w-48 rounded-md border border-rule bg-paper px-2 py-1"
+                  className="chat-select"
                 >
                   {(currentProvider?.models ?? []).map((entry) => (
                     <option key={entry} value={entry}>
                       {entry}
                     </option>
                   ))}
-                </select>
-              </span>
+                </select><ChevronDown size={13} aria-hidden="true" /></label>
+              </div>
             ) : null}
           </div>
         </div>
@@ -207,13 +222,13 @@ export function ChatPanel({ onClose }: { onClose?: () => void }) {
 function Bubble({ role, children }: { role: "user" | "assistant"; children: React.ReactNode }) {
   const isUser = role === "user";
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`max-w-[88%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed ${
-          isUser ? "whitespace-pre-wrap bg-accent text-accent-ink" : "border border-rule bg-paper-2"
-        }`}
-      >
+    <div className={`chat-message ${isUser ? "chat-message-user" : "chat-message-assistant"}`}>
+      <span className="chat-message-avatar" aria-hidden="true">{isUser ? <UserRound size={16} /> : <Bot size={17} />}</span>
+      <div className="chat-message-body">
+        <p className="chat-message-author">{isUser ? "You" : "Lorenzo's twin"}</p>
+        <div className="chat-message-content">
         {children}
+        </div>
       </div>
     </div>
   );

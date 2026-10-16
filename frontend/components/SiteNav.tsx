@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ArrowUpRight, MessageSquare } from "lucide-react";
 import { useChat } from "@/components/chat/ChatProvider";
 import { profile } from "@/lib/content";
 
@@ -16,15 +17,13 @@ export function SiteNav() {
   const { openChat } = useChat();
 
   return (
-    <header className="sticky top-0 z-20 border-b border-rule bg-paper/85 backdrop-blur">
-      <nav
-        aria-label="Primary"
-        className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-4"
-      >
-        <Link href="/" className="font-display text-lg leading-none">
-          {profile.name}
+    <header className="site-header">
+      <nav aria-label="Primary" className="site-shell site-nav">
+        <Link href="/" className="site-brand" aria-label={`${profile.name}, home`}>
+          <span className="brand-mark" aria-hidden="true">lm<span>.</span></span>
+          <span className="brand-name">{profile.name}</span>
         </Link>
-        <ul className="flex items-center gap-1 text-sm sm:gap-2">
+        <ul className="nav-links">
           {LINKS.map((link) => {
             const current = pathname === link.href;
             return (
@@ -32,9 +31,7 @@ export function SiteNav() {
                 <Link
                   href={link.href}
                   aria-current={current ? "page" : undefined}
-                  className={`rounded-full px-3 py-1.5 transition hover:text-accent ${
-                    current ? "bg-paper-2 text-accent" : "text-ink-soft"
-                  }`}
+                  className={`nav-link ${current ? "is-current" : ""}`}
                 >
                   {link.label}
                 </Link>
@@ -45,17 +42,18 @@ export function SiteNav() {
             {pathname === "/chat" ? (
               <span
                 aria-current="page"
-                className="rounded-full bg-accent px-4 py-1.5 font-medium text-accent-ink"
+                className="nav-chat"
               >
-                Chat
+                <MessageSquare size={15} aria-hidden="true" /> <span>Chat</span>
               </span>
             ) : (
               <button
                 type="button"
                 onClick={openChat}
-                className="rounded-full bg-accent px-4 py-1.5 font-medium text-accent-ink transition hover:opacity-90"
+                className="nav-chat"
               >
-                Chat
+                <MessageSquare size={15} aria-hidden="true" /> <span>Chat</span>
+                <ArrowUpRight size={14} className="nav-chat-arrow" aria-hidden="true" />
               </button>
             )}
           </li>

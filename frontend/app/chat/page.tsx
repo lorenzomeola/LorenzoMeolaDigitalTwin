@@ -20,5 +20,5 @@ export default function ChatPage() {
     else if (wasOpen.current) router.replace("/");
   }, [open, router]);
 
-  return <main className="min-h-[60vh]" aria-hidden="true" />;
+  return <main id="main-content" className="min-h-[60dvh]" aria-hidden="true" />;
 }

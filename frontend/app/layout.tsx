@@ -1,14 +1,23 @@
-import type { Metadata } from "next";
-import { Fraunces, Instrument_Sans, JetBrains_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Sora, Instrument_Sans, JetBrains_Mono } from "next/font/google";
 import { ChatDialog } from "@/components/chat/ChatDialog";
 import { ChatProvider } from "@/components/chat/ChatProvider";
 import { SiteNav } from "@/components/SiteNav";
 import { profile } from "@/lib/content";
 import "./globals.css";
 
-const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], axes: ["opsz"] });
+const sora = Sora({ variable: "--font-sora", subsets: ["latin"] });
 const instrument = Instrument_Sans({ variable: "--font-instrument", subsets: ["latin"] });
 const jetbrains = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"] });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
+  themeColor: "#090b0e",
+  colorScheme: "dark",
+};
 
 export const metadata: Metadata = {
   title: `${profile.name} - ${profile.headline}`,
@@ -22,16 +31,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${instrument.variable} ${jetbrains.variable} h-full`}
+      className={`${sora.variable} ${instrument.variable} ${jetbrains.variable} h-full`}
     >
       <body className="flex min-h-full flex-col">
         <ChatProvider>
+          <a href="#main-content" className="skip-link">Skip to content</a>
           <SiteNav />
           <div className="flex-1">{children}</div>
-          <footer className="mx-auto w-full max-w-5xl px-6 py-10 font-mono text-xs text-ink-soft">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-rule pt-6">
-              <span>{profile.name}</span>
-              <span className="flex gap-5">
+          <footer className="site-shell site-footer">
+            <div className="footer-inner">
+              <span>{profile.name} <span className="text-signal">/</span> {profile.location}</span>
+              <span className="footer-links">
                 <a className="hover:text-accent" href={profile.links.github} rel="noreferrer" target="_blank">
                   GitHub
                 </a>

@@ -25,7 +25,7 @@ export function ChatDialog() {
       ref={dialogRef}
       onClose={closeChat}
       aria-label="Chat with the digital twin"
-      className="fixed inset-0 m-0 h-dvh max-h-none w-dvw max-w-none border-0 bg-paper p-0 text-ink"
+      className="twin-dialog"
     >
       {open ? <ChatPanel onClose={closeChat} /> : null}
     </dialog>
