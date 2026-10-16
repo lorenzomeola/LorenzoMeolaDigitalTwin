@@ -1,8 +1,10 @@
 import os
+import json
 from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
+from fastapi import HTTPException
 
 os.environ.setdefault("OPENAI_API_KEY", "test-openai-key")
 
@@ -17,6 +19,9 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def openai_key(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+    monkeypatch.setattr("app.main.enforce_rate_limit", Mock(), raising=False)
+    monkeypatch.setattr("app.main.review_client", lambda: None, raising=False)
+    monkeypatch.setattr("app.main.guard_reply", lambda draft, *args: draft, raising=False)
 
 
 def use_client(monkeypatch, create):
@@ -91,7 +96,7 @@ def test_chat_runs_tool_call_and_returns_follow_up_reply(monkeypatch):
     create = Mock(
         side_effect=[tool_response, model_response("Thanks, I have saved your contact details.")]
     )
-    dispatch = Mock(return_value=[])
+    dispatch = Mock(return_value=[{"role": "tool", "content": '{"status":"saved"}', "tool_call_id": "call_contact"}])
     use_client(monkeypatch, create)
     monkeypatch.setattr("app.main.handle_tool_calls", dispatch)
 
@@ -104,13 +109,13 @@ def test_chat_runs_tool_call_and_returns_follow_up_reply(monkeypatch):
     )
 
     assert response.status_code == 200
-    assert response.json()["reply"] == "Thanks, I have saved your contact details."
+    assert response.json()["reply"] == "Your contact details have been saved for Lorenzo to follow up."
     dispatch.assert_called_once_with(
         [tool_call],
         consent_confirmed=True,
         visitor_emails={"candidate@example.com"},
     )
-    assert create.call_count == 2
+    assert create.call_count == 1
 
 
 def test_chat_does_not_offer_contact_tool_without_visitor_email(monkeypatch):
@@ -227,3 +232,56 @@ def test_chat_reports_unconfigured_provider(monkeypatch):
     response = client.post("/api/chat", json={"message": "Hi", "provider": "groq"})
 
     assert response.status_code == 503
+
+
+def test_chat_rate_limit_rejects_before_any_model_call(monkeypatch):
+    limit = Mock(side_effect=HTTPException(
+        status_code=429, detail="Too many messages", headers={"Retry-After": "45"},
+    ))
+    model_client = Mock()
+    monkeypatch.setattr("app.main.enforce_rate_limit", limit)
+    monkeypatch.setattr("app.main.client_for", model_client)
+
+    response = client.post(
+        "/api/chat", json={"message": "Hello"}, headers={"x-twin-client-ip": "192.0.2.1"},
+    )
+
+    assert response.status_code == 429
+    assert response.headers["Retry-After"] == "45"
+    limit.assert_called_once_with("192.0.2.1")
+    model_client.assert_not_called()
+
+
+def test_chat_returns_only_filtered_reply(monkeypatch):
+    create = Mock(return_value=model_response("An unsafe draft"))
+    use_client(monkeypatch, create)
+    guard = Mock(return_value="A safe reply")
+    monkeypatch.setattr("app.main.guard_reply", guard)
+
+    response = client.post("/api/chat", json={"message": "Tell me about Lorenzo"})
+
+    assert response.json() == {"reply": "A safe reply"}
+    guard.assert_called_once_with("An unsafe draft", "Tell me about Lorenzo", None)
+
+
+def test_chat_confirms_failed_storage_from_tool_result_not_model_claim(monkeypatch):
+    tool_call = SimpleNamespace(
+        id="call_failed", function=SimpleNamespace(
+            name="record_user_details", arguments='{"email":"candidate@example.com"}',
+        ),
+    )
+    response_with_tool = SimpleNamespace(choices=[SimpleNamespace(
+        finish_reason="tool_calls", message=SimpleNamespace(tool_calls=[tool_call]),
+    )])
+    create = Mock(return_value=response_with_tool)
+    use_client(monkeypatch, create)
+    monkeypatch.setattr("app.main.handle_tool_calls", Mock(return_value=[{
+        "role": "tool", "content": json.dumps({"status": "error"}), "tool_call_id": "call_failed",
+    }]))
+
+    response = client.post("/api/chat", json={
+        "message": "Save candidate@example.com", "contactConsent": True,
+    })
+
+    assert response.json()["reply"] == "I couldn't save your contact details right now. Please try again later."
+    assert create.call_count == 1

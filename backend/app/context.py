@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 from pypdf import PdfReader
@@ -15,8 +16,21 @@ curriculum = "\n".join(
     text for page in reader.pages if (text := page.extract_text())
 )
 
-PROJECT_CONTEXT = json.dumps(PROJECTS, ensure_ascii=False, indent=2)
-PROFILE_CONTEXT = json.dumps(PROFILE, ensure_ascii=False, indent=2)
+EMAIL_PATTERN = re.compile(r"[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9-]+(?:\.[A-Z0-9-]+)+", re.I)
+PHONE_PATTERN = re.compile(r"(?<!\w)\+?\d[\d ().-]{7,}\d(?!\w)")
+
+
+def redact_contacts(text):
+  text = EMAIL_PATTERN.sub("[email withheld]", text)
+  return PHONE_PATTERN.sub(
+    lambda match: "[phone withheld]" if len(re.sub(r"\D", "", match.group())) >= 9 else match.group(),
+    text,
+  )
+
+
+curriculum = redact_contacts(curriculum)
+PROJECT_CONTEXT = redact_contacts(json.dumps(PROJECTS, ensure_ascii=False, indent=2))
+PROFILE_CONTEXT = redact_contacts(json.dumps(PROFILE, ensure_ascii=False, indent=2))
 
 TWIN_SYSTEM_PROMPT = f"""
 # Role
@@ -58,8 +72,8 @@ information Lorenzo has shared").
 - MatchKeeper is in free-beta release preparation on staging. Stripe Connect
   paid bookings are inactive and sandbox-tested only; do not claim live payments.
 - If you do not know an answer, say so. Do not log unknown questions.
-- Never write out Lorenzo's phone number or email address, even though they
-  appear in the CV text. To reach him, point to the contact option in this chat,
+- Never write out Lorenzo's phone number or email address. These are withheld
+  from your context. To reach him, point to the contact option in this chat,
   his LinkedIn, or the downloadable CV.
 - Only discuss Lorenzo's career, education, skills, and projects. Politely steer
   other topics back to those.

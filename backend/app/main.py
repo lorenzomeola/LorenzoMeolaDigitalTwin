@@ -1,4 +1,5 @@
 import logging
+import json
 import os
 import re
 from functools import lru_cache
@@ -7,12 +8,14 @@ from typing import Literal
 
 import truststore
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.context import system_prompt
+from app.guardrails import CONTACT_FAILED_REPLY, CONTACT_SAVED_REPLY, guard_reply
+from app.rate_limit import enforce_rate_limit
 from app.tools import TOOLS, handle_tool_calls
 
 # Corporate networks re-sign TLS traffic; the OS trust store lets provider calls verify.
@@ -54,12 +57,22 @@ MAX_REPLY_TOKENS = 2000
 
 @lru_cache(maxsize=8)
 def _build_client(provider, api_key):
-    return OpenAI(api_key=api_key, base_url=PROVIDERS[provider]["base_url"], timeout=60)
+    return OpenAI(api_key=api_key, base_url=PROVIDERS[provider]["base_url"], timeout=30, max_retries=0)
 
 
 def client_for(provider):
     api_key = os.getenv(PROVIDERS[provider]["key_env"])
     return _build_client(provider, api_key) if api_key else None
+
+
+@lru_cache(maxsize=2)
+def _build_review_client(api_key):
+    return OpenAI(api_key=api_key, timeout=12, max_retries=0)
+
+
+def review_client():
+    api_key = os.getenv("OPENAI_API_KEY")
+    return _build_review_client(api_key) if api_key else None
 
 
 def configured_providers():
@@ -156,7 +169,8 @@ def providers():
 
 
 @app.post("/api/chat", response_model=ChatResponse)
-def chat(request: ChatRequest):
+def chat(request: ChatRequest, http_request: Request):
+    enforce_rate_limit(http_request.headers.get("x-twin-client-ip", "unknown"))
     client = client_for(request.provider)
     if client is None:
         raise HTTPException(status_code=503, detail="The chat service is not configured")
@@ -175,27 +189,25 @@ def chat(request: ChatRequest):
 
     try:
         response = client.chat.completions.create(messages=messages, **options)
-        tool_rounds = 0
-        while response.choices[0].finish_reason == "tool_calls":
-            if not request.contactConsent or tool_rounds >= 3:
-                raise RuntimeError("Tool call is not allowed or exceeded the limit")
-
-            assistant_message = response.choices[0].message
-            messages.append(assistant_message)
-            messages.extend(
-                handle_tool_calls(
-                    assistant_message.tool_calls,
-                    consent_confirmed=request.contactConsent,
-                    visitor_emails=visitor_emails,
-                )
+        if response.choices[0].finish_reason == "tool_calls":
+            tool_calls = response.choices[0].message.tool_calls
+            if (
+                not available_tools or len(tool_calls) != 1
+                or tool_calls[0].function.name != "record_user_details"
+            ):
+                raise RuntimeError("Tool call is not allowed")
+            results = handle_tool_calls(
+                tool_calls,
+                consent_confirmed=request.contactConsent,
+                visitor_emails=visitor_emails,
             )
-            response = client.chat.completions.create(messages=messages, **options)
-            tool_rounds += 1
+            saved = bool(results) and json.loads(results[0]["content"]).get("status") == "saved"
+            return ChatResponse(reply=CONTACT_SAVED_REPLY if saved else CONTACT_FAILED_REPLY)
 
         reply = response.choices[0].message.content
         if not reply:
             raise RuntimeError("The model returned an empty reply")
-        return ChatResponse(reply=reply)
+        return ChatResponse(reply=guard_reply(reply, request.message, review_client()))
     except HTTPException:
         raise
     except Exception as error:

@@ -4,7 +4,7 @@ const MAX_BODY_BYTES = 100_000;
 
 export async function POST(request: Request) {
   const raw = await request.text();
-  if (raw.length > MAX_BODY_BYTES) {
+  if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) {
     return Response.json({ detail: "Request is too large." }, { status: 413 });
   }
 
@@ -12,7 +12,12 @@ export async function POST(request: Request) {
   try {
     upstream = await fetch(`${API_URL}/api/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-twin-client-ip": process.env.VERCEL
+          ? (request.headers.get("x-vercel-forwarded-for") ?? request.headers.get("x-forwarded-for") ?? "unknown").split(",")[0].trim()
+          : "127.0.0.1",
+      },
       body: raw,
       signal: AbortSignal.timeout(90_000),
       cache: "no-store",
@@ -33,5 +38,9 @@ export async function POST(request: Request) {
     body && typeof body.detail === "string"
       ? body.detail
       : "The request could not be processed.";
-  return Response.json({ detail }, { status: upstream.status >= 500 ? 502 : upstream.status });
+  const retryAfter = upstream.headers.get("Retry-After");
+  return Response.json({ detail }, {
+    status: upstream.status >= 500 ? 502 : upstream.status,
+    headers: retryAfter ? { "Retry-After": retryAfter } : undefined,
+  });
 }
