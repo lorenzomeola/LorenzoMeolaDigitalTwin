@@ -268,7 +268,7 @@ def test_chat_returns_only_filtered_reply(monkeypatch):
     response = client.post("/api/chat", json={"message": "Tell me about Lorenzo"})
 
     assert response.json() == {"reply": "A safe reply"}
-    guard.assert_called_once_with("An unsafe draft", "Tell me about Lorenzo", None)
+    guard.assert_called_once_with("An unsafe draft", "Tell me about Lorenzo", None, visitor_text="Tell me about Lorenzo")
 
 
 def test_chat_confirms_failed_storage_from_tool_result_not_model_claim(monkeypatch):

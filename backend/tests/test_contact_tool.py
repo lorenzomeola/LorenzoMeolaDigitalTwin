@@ -225,3 +225,14 @@ def test_dispatch_rejects_malformed_arguments_without_crashing():
     result = json.loads(tools.handle_tool_calls([tool_call])[0]["content"])
 
     assert result["status"] == "error"
+
+def test_name_guessed_from_the_email_address_is_rejected():
+    import pytest
+    from app.tools import leave_message
+
+    with pytest.raises(ValueError, match="name"):
+        leave_message(
+            "anna", "anna@x.com", "Hello there",
+            consent_confirmed=True, visitor_emails={"anna@x.com"},
+            visitor_text="Message: Hello there. My email is anna@x.com",
+        )

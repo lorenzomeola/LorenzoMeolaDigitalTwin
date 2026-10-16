@@ -152,12 +152,23 @@ def analyze_role(description, client):
             invalid_quotes = getattr(error, "quotes", invalid_quotes)
 
 
-def render_analysis(result):
-    lines = [f"Estimated requirement coverage: **{result['coverage_percent']}%**", result["methodology"]]
-    labels = {"covered": "Covered", "partial": "Partially covered", "not_accredited": "Not accredited in the CV/project records"}
+ANALYSIS_LABELS = {
+    "coverage": "Estimated requirement coverage", "required": "Required", "preferred": "Preferred",
+    "covered": "Covered", "partial": "Partially covered",
+    "not_accredited": "Not accredited in the CV/project records", "evidence": "Evidence",
+}
+
+
+def analysis_labels(result):
+    return {**ANALYSIS_LABELS, "methodology": result["methodology"]}
+
+
+def render_analysis(result, labels=None):
+    labels = labels or analysis_labels(result)
+    lines = [f"{labels['coverage']}: **{result['coverage_percent']}%**", labels["methodology"]]
     for requirement in result["requirements"]:
         quote = requirement["requirement"].replace("\n", " ")
-        lines.append(f"\n**{requirement['priority'].title()}: {labels[requirement['match']]}**\n{quote}")
+        lines.append(f"\n**{labels[requirement['priority']]}: {labels[requirement['match']]}**\n{quote}")
         for evidence in requirement["evidence"]:
-            lines.append("Evidence: " + evidence)
+            lines.append(f"{labels['evidence']}: " + evidence)
     return "\n\n".join(lines)[:12000]

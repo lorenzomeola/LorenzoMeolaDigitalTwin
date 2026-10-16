@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 import psycopg
 
-from app.context import PUBLIC_CONTACT_DETAILS
+from app.context import EMAIL_PATTERN, PUBLIC_CONTACT_DETAILS
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +113,11 @@ def _submission_fields(fields, consent_confirmed, visitor_emails, visitor_text):
         if not isinstance(value, str) or not value.strip() or len(value.strip()) > limits[field]:
             raise ValueError(f"Invalid {field}")
         value = value.strip()
-        if " ".join(value.split()).casefold() not in normalized_visitor:
+        haystack = normalized_visitor
+        if field == "name":
+            # A name guessed from an email address is not a name the visitor gave.
+            haystack = " ".join(EMAIL_PATTERN.sub(" ", visitor_text).split()).casefold()
+        if " ".join(value.split()).casefold() not in haystack:
             raise ValueError(f"The visitor must provide {field}; do not invent or rewrite it")
         cleaned[field] = value
     return cleaned

@@ -47,7 +47,45 @@ interface ChatState {
 }
 
 const ChatContext = createContext<ChatState | null>(null);
-const MAX_HISTORY = 20;
+const MAX_HISTORY = 40;
+const MAX_HISTORY_CHARS = 60_000;
+const STORAGE_KEY = "twin-chat-session-v1";
+
+interface StoredSession {
+  messages: ChatMessage[];
+  contactConsent: boolean;
+  provider: string;
+  model: string;
+}
+
+function readSession(): StoredSession | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = sessionStorage.getItem(STORAGE_KEY);
+    if (!stored) return null;
+    const session = JSON.parse(stored) as StoredSession;
+    const valid = Array.isArray(session.messages) && session.messages.every(
+      (message) =>
+        typeof message.id === "number" &&
+        (message.role === "user" || message.role === "assistant") &&
+        typeof message.content === "string",
+    );
+    return valid ? session : null;
+  } catch {
+    return null;
+  }
+}
+
+function recentHistory(messages: ChatMessage[]) {
+  const kept: { role: ChatMessage["role"]; content: string }[] = [];
+  let total = 0;
+  for (const { role, content } of messages.slice(-MAX_HISTORY).reverse()) {
+    total += content.length;
+    if (total > MAX_HISTORY_CHARS) break;
+    kept.unshift({ role, content });
+  }
+  return kept;
+}
 
 export function useChat() {
   const context = useContext(ChatContext);
@@ -56,21 +94,34 @@ export function useChat() {
 }
 
 export function ChatProvider({ children }: { children: ReactNode }) {
+  const [session] = useState(readSession);
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => session?.messages ?? []);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [providers, setProviders] = useState<ProviderOption[] | null>(null);
-  const [provider, setProvider] = useState("openai");
-  const [model, setModel] = useState("");
-  const [contactConsent, setContactConsent] = useState(false);
-  const nextId = useRef(1);
-  const messagesRef = useRef<ChatMessage[]>([]);
+  const [provider, setProvider] = useState(session?.provider || "openai");
+  const [model, setModel] = useState(session?.model ?? "");
+  const [contactConsent, setContactConsent] = useState(session?.contactConsent ?? false);
+  const nextId = useRef(Math.max(0, ...(session?.messages ?? []).map((message) => message.id)) + 1);
+  const messagesRef = useRef<ChatMessage[]>(session?.messages ?? []);
   const loadedProviders = useRef(false);
+  const restoredModel = useRef(Boolean(session?.model));
 
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ messages, contactConsent, provider, model } satisfies StoredSession),
+      );
+    } catch {
+      // Storage can be unavailable or full; the chat still works without persistence.
+    }
+  }, [messages, contactConsent, provider, model]);
 
   const loadProviders = useCallback(async () => {
     if (loadedProviders.current) return;
@@ -79,7 +130,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const response = await fetch("/api/providers");
       const data = (await response.json()) as ProvidersResponse;
       setProviders(data.providers);
-      if (data.default) {
+      if (data.default && !restoredModel.current) {
         setProvider(data.default.provider);
         setModel(data.default.model);
       }
@@ -110,9 +161,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const content = text.trim();
       if (!content || sending) return;
 
-      const history = messagesRef.current
-        .slice(-MAX_HISTORY)
-        .map(({ role, content: body }) => ({ role, content: body }));
+      const history = recentHistory(messagesRef.current);
       const userMessage: ChatMessage = { id: nextId.current++, role: "user", content };
       setMessages((current) => [...current, userMessage]);
       setSending(true);
@@ -152,6 +201,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const reset = useCallback(() => {
     setMessages([]);
     setError(null);
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Ignore unavailable storage.
+    }
   }, []);
 
   const value = useMemo<ChatState>(

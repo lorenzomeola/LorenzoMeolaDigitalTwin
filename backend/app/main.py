@@ -14,8 +14,10 @@ from openai import OpenAI
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.context import system_prompt
-from app.guardrails import CONTACT_FAILED_REPLY, CONTACT_SAVED_REPLY, guard_reply
+from app.guardrails import CONTACT_FAILED_REPLY, CONTACT_SAVED_REPLY, SAFE_REPLY, guard_reply
+from app.localize import localize
 from app.rate_limit import enforce_rate_limit
+from app.role_match import analysis_labels, render_analysis
 from app.tools import WRITE_TOOLS, available_tools, handle_tool_calls
 
 # Corporate networks re-sign TLS traffic; the OS trust store lets provider calls verify.
@@ -107,18 +109,41 @@ SAVE_CONFIRMATIONS = {
 }
 
 
-def tool_reply(tool_name, result, question):
+def tool_text(tool_name, result):
     if tool_name in WRITE_TOOLS:
         if result.get("status") == "saved":
             return SAVE_CONFIRMATIONS[tool_name]
         return missing_field_reply(result.get("reason")) or CONTACT_FAILED_REPLY
     if result.get("status") != "ok":
         return "I couldn't retrieve that information right now. Please try again with the full details."
-    if tool_name == "get_contact_details":
-        return f"Lorenzo Meola\n\nEmail: {result['email']}\n\nPhone: {result['phone']}\n\nLocation: {result['location']}"
-    from app.role_match import render_analysis
+    return f"Lorenzo Meola\n\nEmail: {result['email']}\n\nPhone: {result['phone']}\n\nLocation: {result['location']}"
 
-    return guard_reply(render_analysis(result), question, review_client(), verified_analysis=result)
+
+def tool_reply(tool_results, question, visitor_text):
+    strings, plan = {}, []
+    for index, (tool_name, result) in enumerate(tool_results):
+        if tool_name == "get_skills_for_role" and result.get("status") == "ok":
+            draft = render_analysis(result)
+            if guard_reply(draft, question, review_client(), verified_analysis=result, visitor_text=visitor_text) != SAFE_REPLY:
+                strings.update({f"{index}.{key}": label for key, label in analysis_labels(result).items()})
+                plan.append(("analysis", index, result))
+                continue
+            text = SAFE_REPLY
+        else:
+            text = tool_text(tool_name, result)
+        strings[str(index)] = text
+        plan.append(("text", index, None))
+    translated = localize(strings, visitor_text, review_client())
+    parts = []
+    for kind, index, result in plan:
+        if kind == "text":
+            parts.append(translated[str(index)])
+        else:
+            prefix = f"{index}."
+            labels = {key[len(prefix):]: value for key, value in translated.items() if key.startswith(prefix)}
+            parts.append(render_analysis(result, labels))
+    return "\n\n".join(parts)
+
 
 email_pattern = re.compile(r"[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9-]+(?:\.[A-Z0-9-]+)+", re.I)
 # Smaller models call get_contact_details for unrelated questions, so the visitor must ask for contact data.
@@ -159,7 +184,7 @@ class HistoryMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=12000)
-    history: list[HistoryMessage] = Field(default_factory=list, max_length=20)
+    history: list[HistoryMessage] = Field(default_factory=list, max_length=40)
     contactConsent: bool = False
     provider: str = "openai"
     model: str | None = None
@@ -252,14 +277,18 @@ def chat(request: ChatRequest, http_request: Request):
                 analysis_client=review_client(),
             )
             parts = [
-                tool_reply(call.function.name, json.loads(item["content"]), request.message)
+                (call.function.name, json.loads(item["content"]))
                 for call, item in zip(tool_calls, results)
             ]
-            return ChatResponse(reply="\n\n".join(parts))
+            return ChatResponse(reply=tool_reply(parts, request.message, visitor_text))
+
         reply = response.choices[0].message.content
         if not reply:
             raise RuntimeError("The model returned an empty reply")
-        return ChatResponse(reply=guard_reply(reply, request.message, review_client()))
+        reply = guard_reply(reply, request.message, review_client(), visitor_text=visitor_text)
+        if reply == SAFE_REPLY:
+            reply = localize({"reply": SAFE_REPLY}, visitor_text, review_client())["reply"]
+        return ChatResponse(reply=reply)
     except HTTPException:
         raise
     except Exception as error:
