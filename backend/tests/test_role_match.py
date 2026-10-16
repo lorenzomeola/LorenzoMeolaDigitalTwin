@@ -37,18 +37,20 @@ def test_score_is_computed_from_validated_evidence_not_model_percentage():
     {"source_quote": "Python", "priority": "required", "match": "covered", "evidence_ids": ["invented"]},
     {"source_quote": "Python", "priority": "required", "match": "covered", "evidence_ids": []},
 ])
-def test_invalid_requirements_or_evidence_fail_closed(requirement):
+def test_invalid_requirements_or_evidence_fail_closed(requirement, caplog):
     from app.role_match import analyze_role
 
     with pytest.raises(ValueError):
-        analyze_role("Required: Python", analysis_client([requirement]))
+        analyze_role("AI Engineer role. Required: Python.", analysis_client([requirement]))
+    assert "role_analysis_rejected code=" in caplog.text
+    assert "Required: Python" not in caplog.text
 
 
 def test_empty_extraction_does_not_fabricate_zero_percent():
     from app.role_match import analyze_role
 
     with pytest.raises(ValueError):
-        analyze_role("Hello", analysis_client([]))
+        analyze_role("A role with unclear duties.", analysis_client([]))
 
 
 def test_duplicate_requirements_do_not_inflate_score():
@@ -56,7 +58,7 @@ def test_duplicate_requirements_do_not_inflate_score():
 
     requirement = {"source_quote": "Python", "priority": "required", "match": "not_accredited", "evidence_ids": []}
     with pytest.raises(ValueError):
-        analyze_role("Python", analysis_client([requirement, requirement]))
+        analyze_role("AI role requiring Python.", analysis_client([requirement, requirement]))
 
 
 def test_role_tool_rejects_description_not_provided_by_visitor():

@@ -1,9 +1,17 @@
 import json
+import logging
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.context import PROFILE, PROJECTS, redact_contacts
+
+logger = logging.getLogger(__name__)
+
+
+def _reject(code, reason):
+    logger.warning("role_analysis_rejected code=%s", code)
+    raise ValueError(reason)
 
 
 def _verified_facts():
@@ -74,7 +82,11 @@ def analyze_role(description, client):
             {"role": "user", "content": json.dumps({"job_description": redact_contacts(description)})},
         ],
     )
-    analysis = RoleAnalysis.model_validate_json(response.choices[0].message.content)
+    try:
+        analysis = RoleAnalysis.model_validate_json(response.choices[0].message.content)
+    except ValueError:
+        logger.warning("role_analysis_rejected code=invalid_structure")
+        raise
     source = " ".join(redact_contacts(description).split()).casefold()
     seen = set()
     requirements = []
@@ -82,12 +94,12 @@ def analyze_role(description, client):
     for requirement in analysis.requirements:
         quote = " ".join(requirement.source_quote.split()).casefold()
         if quote not in source or quote in seen:
-            raise ValueError("Requirements must be distinct quotes from the role description")
+            _reject("invalid_or_duplicate_quote", "Requirements must be distinct quotes from the role description")
         seen.add(quote)
         if any(identifier not in VERIFIED_FACTS for identifier in requirement.evidence_ids):
-            raise ValueError("Evidence must reference verified profile facts")
+            _reject("unknown_evidence", "Evidence must reference verified profile facts")
         if (requirement.match == "not_accredited") == bool(requirement.evidence_ids):
-            raise ValueError("Match classification requires consistent evidence")
+            _reject("inconsistent_evidence", "Match classification requires consistent evidence")
         weight = 2 if requirement.priority == "required" else 1
         total += weight
         earned += weight * {"covered": 1, "partial": 0.5, "not_accredited": 0}[requirement.match]
