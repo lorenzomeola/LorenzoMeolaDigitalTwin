@@ -14,7 +14,7 @@ SAFE_REPLY = (
     "skills and projects. Please ask a more specific question, or check his CV "
     "and LinkedIn profile."
 )
-CONTACT_SAVED_REPLY = "Your contact details have been saved for Lorenzo to follow up."
+CONTACT_SAVED_REPLY = "Your contact details have been saved for Lorenzo. He will review them and contact you directly."
 CONTACT_FAILED_REPLY = "I couldn't save your contact details right now. Please try again later."
 SAVE_CLAIM = re.compile(
     r"\b(?:saved|stored|recorded|guardado|guardada|registrado|registrada|salvato|salvata)\b",

@@ -111,7 +111,7 @@ def test_chat_runs_tool_call_and_returns_follow_up_reply(monkeypatch):
     )
 
     assert response.status_code == 200
-    assert response.json()["reply"] == "Your contact details have been saved for Lorenzo to follow up."
+    assert response.json()["reply"] == "Your contact details have been saved for Lorenzo. He will review them and contact you directly."
     dispatch.assert_called_once_with(
         [tool_call],
         consent_confirmed=True,

@@ -104,8 +104,8 @@ def missing_field_reply(reason):
 
 SAVE_CONFIRMATIONS = {
     "record_user_details": CONTACT_SAVED_REPLY,
-    "request_interview": "Your interview request has been saved for Lorenzo. This is not a confirmed booking; the preferred time is a request only.",
-    "leave_message": "Your message has been saved for Lorenzo. No automatic notification has been sent.",
+    "request_interview": "Your interview request has been saved for Lorenzo. This is not a confirmed booking; the preferred time is a request only. He will review it and contact you directly to arrange the details.",
+    "leave_message": "Your message has been saved for Lorenzo. He will review it and contact you directly.",
 }
 
 
