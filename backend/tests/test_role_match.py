@@ -57,8 +57,24 @@ def test_duplicate_requirements_do_not_inflate_score():
     from app.role_match import analyze_role
 
     requirement = {"source_quote": "Python", "priority": "required", "match": "not_accredited", "evidence_ids": []}
-    with pytest.raises(ValueError):
-        analyze_role("AI role requiring Python.", analysis_client([requirement, requirement]))
+    result = analyze_role("AI role requiring Python.", analysis_client([requirement, requirement]))
+    assert len(result["requirements"]) == 1
+
+
+def test_retry_feedback_names_the_invalid_quote():
+    from app.role_match import analyze_role
+
+    invalid = {"source_quote": "use CI/CD", "priority": "required", "match": "not_accredited", "evidence_ids": []}
+    valid = {"source_quote": "CI/CD", "priority": "required", "match": "not_accredited", "evidence_ids": []}
+    client = analysis_client([invalid])
+    client.chat.completions.create.side_effect = [
+        SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps({"requirements": [item]})))])
+        for item in (invalid, valid)
+    ]
+
+    analyze_role("Required: use Docker and CI/CD", client)
+
+    assert "use CI/CD" in client.chat.completions.create.call_args.kwargs["messages"][0]["content"]
 
 
 def test_role_tool_rejects_description_not_provided_by_visitor():

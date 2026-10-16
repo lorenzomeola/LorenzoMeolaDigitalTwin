@@ -40,7 +40,7 @@ class Requirement(BaseModel):
     source_quote: str = Field(min_length=1, max_length=2000)
     priority: Literal["required", "preferred"]
     match: Literal["covered", "partial", "not_accredited"]
-    evidence_ids: list[str] = Field(max_length=5)
+    evidence_ids: list[str] = Field(max_length=30)
 
 
 class RoleAnalysis(BaseModel):
@@ -48,7 +48,13 @@ class RoleAnalysis(BaseModel):
     requirements: list[Requirement] = Field(min_length=1, max_length=30)
 
 
-def _analyze_role(description, client, corrected=False):
+class InvalidQuotes(ValueError):
+    def __init__(self, quotes):
+        super().__init__("Requirements must be distinct quotes from the role description")
+        self.quotes = quotes
+
+
+def _analyze_role(description, client, corrected=False, invalid_quotes=()):
     if not isinstance(description, str) or not 20 <= len(description.strip()) <= 12000:
         raise ValueError("Paste a role description between 20 and 12000 characters")
     if client is None:
@@ -64,6 +70,9 @@ def _analyze_role(description, client, corrected=False):
                 "requirements, including gaps, with one atomic requirement per entry. "
                 "Split lists: 'Required: FastAPI, REST APIs, SQL' is THREE entries with "
                 "source_quote 'FastAPI', 'REST APIs', 'SQL', not one grouped entry. "
+                "Every source_quote must be copied character for character from one contiguous "
+                "stretch of the job description: when splitting 'use Docker and CI/CD', quote "
+                "'Docker' and 'CI/CD', never a rebuilt phrase such as 'use CI/CD'. "
                 "Preserve required/preferred priority from the surrounding text. "
                 "Do not omit difficult requirements or duplicate "
                 "requirements to inflate coverage. Do not score age, gender, ethnicity, family, "
@@ -75,14 +84,16 @@ def _analyze_role(description, client, corrected=False):
                 "evidence, partial with limited relevant evidence, otherwise not_accredited. "
                 "Return JSON with requirements array only. Each entry must contain source_quote "
                 "(an exact quote from the job description), priority (required or preferred), "
-                "match (covered, partial or not_accredited), evidence_ids (IDs from facts; "
+                "match (covered, partial or not_accredited), evidence_ids (at most 5 IDs from facts; "
                 "required for covered/partial, empty for not_accredited). Do not calculate a "
                      "percentage or predict hiring decisions. Facts:\n" + json.dumps(VERIFIED_FACTS)
                      + ("\nCORRECTION: A previous extraction failed validation. Every source_quote "
                          "must be an EXACT, unique, contiguous substring of job_description. "
                          "Do not expand abbreviations, paraphrase quotes, add inferred skills, "
                          "or repeat the same quote for multiple requirements. Use only supplied "
-                         "fact IDs with directly relevant evidence. Keep not_accredited evidence_ids empty."
+                         "fact IDs with directly relevant evidence. Keep not_accredited evidence_ids empty. "
+                         + ("These earlier quotes were not exact substrings, so replace them with exact "
+                            "shorter quotes: " + json.dumps(list(invalid_quotes)[:10]) if invalid_quotes else "")
                          if corrected else "")
             )},
             {"role": "user", "content": json.dumps({"job_description": redact_contacts(description)})},
@@ -94,13 +105,17 @@ def _analyze_role(description, client, corrected=False):
         logger.warning("role_analysis_rejected code=invalid_structure")
         raise
     source = " ".join(redact_contacts(description).split()).casefold()
+    normalized = [" ".join(item.source_quote.split()).casefold() for item in analysis.requirements]
+    invalid = [item.source_quote[:200] for item, quote in zip(analysis.requirements, normalized) if quote not in source]
+    if invalid:
+        logger.warning("role_analysis_rejected code=invalid_or_duplicate_quote")
+        raise InvalidQuotes(invalid)
     seen = set()
     requirements = []
     earned = total = 0
-    for requirement in analysis.requirements:
-        quote = " ".join(requirement.source_quote.split()).casefold()
-        if quote not in source or quote in seen:
-            _reject("invalid_or_duplicate_quote", "Requirements must be distinct quotes from the role description")
+    for requirement, quote in zip(analysis.requirements, normalized):
+        if quote in seen:
+            continue
         seen.add(quote)
         if any(identifier not in VERIFIED_FACTS for identifier in requirement.evidence_ids):
             _reject("unknown_evidence", "Evidence must reference verified profile facts")
@@ -112,7 +127,7 @@ def _analyze_role(description, client, corrected=False):
         requirements.append({
             "requirement": requirement.source_quote, "priority": requirement.priority,
             "match": requirement.match,
-            "evidence": [VERIFIED_FACTS[identifier] for identifier in requirement.evidence_ids],
+            "evidence": [VERIFIED_FACTS[identifier] for identifier in requirement.evidence_ids[:5]],
         })
     return {
         "status": "ok", "coverage_percent": round(100 * earned / total),
@@ -127,12 +142,14 @@ def _analyze_role(description, client, corrected=False):
 
 
 def analyze_role(description, client):
+    invalid_quotes = ()
     for attempt in range(2):
         try:
-            return _analyze_role(description, client, corrected=attempt == 1)
-        except ValueError:
+            return _analyze_role(description, client, corrected=attempt > 0, invalid_quotes=invalid_quotes)
+        except ValueError as error:
             if attempt == 1:
                 raise
+            invalid_quotes = getattr(error, "quotes", invalid_quotes)
 
 
 def render_analysis(result):

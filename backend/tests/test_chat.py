@@ -193,7 +193,7 @@ def test_providers_lists_only_configured_providers_without_secrets(monkeypatch):
     assert response.status_code == 200
     body = response.json()
     assert [provider["id"] for provider in body["providers"]] == ["openai", "groq"]
-    assert body["default"] == {"provider": "openai", "model": "gpt-5.4-nano"}
+    assert body["default"] == {"provider": "openai", "model": "gpt-4.1-mini"}
     assert "secret" not in response.text
 
 
@@ -309,6 +309,23 @@ def test_chat_returns_authorized_contact_details_without_consent(monkeypatch):
     assert PUBLIC_CONTACT_DETAILS["email"] in response.json()["reply"]
     assert PUBLIC_CONTACT_DETAILS["phone"] in response.json()["reply"]
     assert "Ghent, Belgium" in response.json()["reply"]
+
+
+def test_chat_ignores_contact_tool_call_when_visitor_did_not_ask_for_contact(monkeypatch):
+    from app.context import PUBLIC_CONTACT_DETAILS
+
+    tool_call = SimpleNamespace(id="contact", function=SimpleNamespace(name="get_contact_details", arguments="{}"))
+    wrong = SimpleNamespace(choices=[SimpleNamespace(
+        finish_reason="tool_calls", message=SimpleNamespace(tool_calls=[tool_call]),
+    )])
+    create = Mock(side_effect=[wrong, model_response("Lorenzo is an AI Product Engineer.")])
+    use_client(monkeypatch, create)
+
+    response = client.post("/api/chat", json={"message": "Who is Lorenzo?"})
+
+    assert response.json() == {"reply": "Lorenzo is an AI Product Engineer."}
+    assert PUBLIC_CONTACT_DETAILS["email"] not in response.text
+    assert "tools" not in create.call_args.kwargs
 
 
 @pytest.mark.parametrize("tool_name,expected", [

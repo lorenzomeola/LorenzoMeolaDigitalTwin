@@ -35,7 +35,7 @@ PROVIDERS = {
         "key_env": "OPENAI_API_KEY",
         "base_url": None,
         "token_param": "max_completion_tokens",
-        "models": ["gpt-5.4-nano", "gpt-4.1-mini"],
+        "models": ["gpt-4.1-mini", "gpt-5.4-nano"],
     },
     "groq": {
         "label": "Groq",
@@ -91,6 +91,12 @@ def completion_options(provider, model, tools):
 
 
 email_pattern = re.compile(r"[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9-]+(?:\.[A-Z0-9-]+)+", re.I)
+# Smaller models call get_contact_details for unrelated questions, so the visitor must ask for contact data.
+contact_intent = re.compile(
+    r"e-?mail|mail\b|phone|telephone|mobile|\bcall\b|\bnumber\b|contact|reach|get in touch|"
+    r"correo|tel[eé]fono|n[uú]mero|llamar|contactar|contatt|telefon|numero|chiamare",
+    re.I,
+)
 
 app = FastAPI(title="Lorenzo Meola Digital Twin API", version="1.0.0")
 
@@ -189,6 +195,19 @@ def chat(request: ChatRequest, http_request: Request):
 
     try:
         response = client.chat.completions.create(messages=messages, **options)
+        first_call = (
+            response.choices[0].message.tool_calls
+            if response.choices[0].finish_reason == "tool_calls" else None
+        )
+        if (
+            first_call
+            and len(first_call) == 1
+            and first_call[0].function.name == "get_contact_details"
+            and not contact_intent.search(request.message)
+        ):
+            response = client.chat.completions.create(
+                messages=messages, **completion_options(request.provider, request.model, None),
+            )
         if response.choices[0].finish_reason == "tool_calls":
             tool_calls = response.choices[0].message.tool_calls
             if (

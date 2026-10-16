@@ -51,6 +51,16 @@ def test_deterministic_checks_block_without_calling_reviewer(draft):
     client.chat.completions.create.assert_not_called()
 
 
+def test_visitor_own_email_may_be_repeated_but_other_emails_still_blocked():
+    from app.guardrails import SAFE_REPLY, guard_reply
+
+    question = "Please save my email ana@example.com"
+    client = reviewer(json.dumps({"approved": True, "violations": []}))
+
+    assert guard_reply("Tick the box first, then send ana@example.com again.", question, client) != SAFE_REPLY
+    assert guard_reply("Write to other@example.com", question, reviewer()) == SAFE_REPLY
+
+
 def test_rejected_reply_is_repaired_and_reviewed_again():
     from app.guardrails import guard_reply
 

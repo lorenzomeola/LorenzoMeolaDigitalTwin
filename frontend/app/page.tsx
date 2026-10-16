@@ -46,7 +46,7 @@ export default function AboutPage() {
         <div className="work-overview">
           <figure className="product-preview">
             <Link href="/projects#ai-assets-directory" aria-label="View AI Assets Directory project">
-              <Image src="/images/ai-assets-directory.png" width={1440} height={960} alt="AI Assets Directory website with its searchable collection of skills, agents and AI workflows" sizes="(max-width: 767px) 100vw, 50vw" />
+              <Image src="/images/ai-assets-directory.webp" width={1200} height={800} unoptimized alt="AI Assets Directory website with its searchable collection of skills, agents and AI workflows" sizes="(max-width: 767px) 100vw, 50vw" />
             </Link>
             <figcaption><span>AI Assets Directory</span><span>Live product <ArrowUpRight size={14} aria-hidden="true" /></span></figcaption>
           </figure>
