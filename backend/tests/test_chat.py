@@ -392,3 +392,81 @@ def test_chat_accepts_pasted_role_descriptions_up_to_12000_characters(monkeypatc
     use_client(monkeypatch, create)
 
     assert client.post("/api/chat", json={"message": "Python " * 1000}).status_code == 200
+
+
+@pytest.mark.parametrize("coverage", [0, 50, 100])
+def test_role_reply_keeps_server_percentage_and_reviews_the_final_narrative(monkeypatch, coverage):
+    from app.main import tool_reply
+
+    narrative = "Lorenzo has related product experience. Figma proficiency is not documented."
+    create = Mock(return_value=model_response(narrative))
+    reviewer = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    monkeypatch.setattr("app.main.review_client", lambda: reviewer)
+    monkeypatch.setattr("app.main.localize", lambda strings, *args: strings)
+    guard = Mock(side_effect=lambda draft, *args, **kwargs: draft)
+    monkeypatch.setattr("app.main.guard_reply", guard)
+    result = {"status": "ok", "coverage_percent": coverage, "requirements": [
+        {"requirement": "Figma", "priority": "required", "match": "not_accredited", "evidence": []},
+    ], "methodology": "Required weight 2, preferred weight 1."}
+
+    reply = tool_reply([("get_skills_for_role", result)], "Compare this role", "Compare this role")
+
+    assert f"**{coverage}%**" in reply
+    assert narrative in reply
+    assert "Required weight" not in reply
+    assert "**Required:" not in reply
+    guard.assert_called_once_with(reply, "Compare this role", reviewer,
+                                  verified_analysis=result, visitor_text="Compare this role")
+
+
+def test_role_reply_does_not_return_a_rejected_summary(monkeypatch):
+    from app.guardrails import SAFE_REPLY
+    from app.main import tool_reply
+
+    create = Mock(return_value=model_response("Lorenzo is a Figma expert."))
+    reviewer = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    monkeypatch.setattr("app.main.review_client", lambda: reviewer)
+    monkeypatch.setattr("app.main.localize", lambda strings, *args: strings)
+    monkeypatch.setattr("app.main.guard_reply", lambda *args, **kwargs: SAFE_REPLY)
+    result = {"status": "ok", "coverage_percent": 0, "requirements": [], "methodology": "Indicative."}
+
+    assert tool_reply([("get_skills_for_role", result)], "Compare", "Compare") == SAFE_REPLY
+
+
+def test_role_reply_fails_safely_when_summary_generation_is_unavailable(monkeypatch):
+    from app.guardrails import SAFE_REPLY
+    from app.main import tool_reply
+
+    create = Mock(side_effect=RuntimeError("Provider unavailable"))
+    reviewer = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    monkeypatch.setattr("app.main.review_client", lambda: reviewer)
+    monkeypatch.setattr("app.main.localize", lambda strings, *args: strings)
+    result = {"status": "ok", "coverage_percent": 0, "requirements": [], "methodology": "Indicative."}
+
+    assert tool_reply([("get_skills_for_role", result)], "Compare", "Compare") == SAFE_REPLY
+
+
+def test_role_reply_localizes_score_labels_in_the_generated_narratives_language(monkeypatch):
+    from app.main import tool_reply
+
+    narrative = "Lorenzo tiene experiencia relacionada con producto. No consta dominio de Figma."
+
+    def complete(**kwargs):
+        if "response_format" not in kwargs:
+            return model_response(narrative)
+        payload = json.loads(kwargs["messages"][1]["content"])
+        labels = payload["messages"]
+        if payload["visitor_messages"] == narrative:
+            labels = {"coverage": "Cobertura estimada de requisitos",
+                      "methodology": "Cobertura orientativa, no probabilidad de contratacion."}
+        return model_response(json.dumps(labels))
+
+    reviewer = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=complete)))
+    monkeypatch.setattr("app.main.review_client", lambda: reviewer)
+    visitor = "Respondeme en espanol. " + "Product designer proficient in Figma. " * 60
+    result = {"status": "ok", "coverage_percent": 29, "requirements": [], "methodology": "Indicative."}
+
+    reply = tool_reply([("get_skills_for_role", result)], visitor, visitor)
+
+    assert reply.startswith("Cobertura estimada de requisitos: **29%**")
+    assert narrative in reply
