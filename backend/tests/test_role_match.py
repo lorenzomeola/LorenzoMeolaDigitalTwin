@@ -123,3 +123,32 @@ def test_curly_punctuation_and_heading_joined_quotes_are_verified_against_the_te
     result = analyze_role(text, analysis_client(items))
 
     assert [item["requirement"] for item in result["requirements"]] == ["You'll build agents", "Alignment strategies"]
+
+
+def test_role_summary_uses_validated_analysis_without_dumping_evidence():
+    from app.role_match import summarize_analysis
+
+    narrative = "Lorenzo has relevant dashboard experience. Figma proficiency is not documented."
+    client = analysis_client([])
+    client.chat.completions.create.return_value.choices[0].message.content = narrative
+    result = {"coverage_percent": 50, "requirements": [
+        {"requirement": "dashboards", "priority": "required", "match": "covered",
+         "evidence": ["Project CCA: Built a data-visualization interface."]},
+        {"requirement": "Figma", "priority": "required", "match": "not_accredited", "evidence": []},
+    ]}
+
+    assert summarize_analysis(result, "Compare this role in English", client) == narrative
+    payload = json.loads(client.chat.completions.create.call_args.kwargs["messages"][1]["content"])
+    assert payload["analysis"] == result
+    assert payload["visitor_messages"] == "Compare this role in English"
+
+
+@pytest.mark.parametrize("draft", [None, "   ", "Lorenzo is a 95% match.", "word " * 1300])
+def test_role_summary_rejects_missing_oversized_or_model_generated_percentages(draft):
+    from app.role_match import summarize_analysis
+
+    client = analysis_client([])
+    client.chat.completions.create.return_value.choices[0].message.content = draft
+
+    with pytest.raises(ValueError):
+        summarize_analysis({"coverage_percent": 29, "requirements": []}, "Compare this role", client)

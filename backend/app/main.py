@@ -17,7 +17,7 @@ from app.context import system_prompt
 from app.guardrails import CONTACT_FAILED_REPLY, CONTACT_SAVED_REPLY, SAFE_REPLY, guard_reply
 from app.localize import localize
 from app.rate_limit import enforce_rate_limit
-from app.role_match import analysis_labels, render_analysis
+from app.role_match import analysis_labels, render_analysis, summarize_analysis
 from app.tools import WRITE_TOOLS, available_tools, handle_tool_calls
 
 # Corporate networks re-sign TLS traffic; the OS trust store lets provider calls verify.
@@ -128,27 +128,31 @@ def tool_text(tool_name, result):
 
 def tool_reply(tool_results, question, visitor_text):
     strings, plan = {}, []
+    reviewer = review_client()
     for index, (tool_name, result) in enumerate(tool_results):
         if tool_name == "get_skills_for_role" and result.get("status") == "ok":
-            draft = render_analysis(result)
-            if guard_reply(draft, question, review_client(), verified_analysis=result, visitor_text=visitor_text) != SAFE_REPLY:
-                strings.update({f"{index}.{key}": label for key, label in analysis_labels(result).items()})
-                plan.append(("analysis", index, result))
-                continue
-            text = SAFE_REPLY
-        else:
-            text = tool_text(tool_name, result)
+            plan.append(("analysis", index, result))
+            continue
+        text = tool_text(tool_name, result)
         strings[str(index)] = text
         plan.append(("text", index, None))
-    translated = localize(strings, visitor_text, review_client())
+    translated = localize(strings, visitor_text, reviewer)
     parts = []
     for kind, index, result in plan:
         if kind == "text":
             parts.append(translated[str(index)])
         else:
-            prefix = f"{index}."
-            labels = {key[len(prefix):]: value for key, value in translated.items() if key.startswith(prefix)}
-            parts.append(render_analysis(result, labels))
+            try:
+                summary = summarize_analysis(result, visitor_text, reviewer)
+                labels = localize(analysis_labels(result), summary, reviewer)
+                draft = render_analysis(result, summary, labels)
+                reply = guard_reply(draft, question, reviewer, verified_analysis=result, visitor_text=visitor_text)
+            except Exception as error:
+                logger.warning("role_summary_failed error_type=%s", type(error).__name__)
+                reply = SAFE_REPLY
+            if reply == SAFE_REPLY:
+                reply = localize({"reply": SAFE_REPLY}, visitor_text, reviewer)["reply"]
+            parts.append(reply)
     return "\n\n".join(parts)
 
 
