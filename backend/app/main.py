@@ -37,7 +37,7 @@ PROVIDERS = {
         "key_env": "OPENAI_API_KEY",
         "base_url": None,
         "token_param": "max_completion_tokens",
-        "models": ["gpt-4.1-mini", "gpt-5.4-nano"],
+        "models": ["gpt-6-luna"],
     },
     "groq": {
         "label": "Groq",
@@ -91,6 +91,9 @@ def completion_options(provider, model, tools):
     options = {"model": model, PROVIDERS[provider]["token_param"]: MAX_REPLY_TOKENS}
     if tools:
         options["tools"] = tools
+        # gpt-6 models reject function tools in chat completions unless reasoning is off.
+        if provider == "openai" and model.startswith("gpt-6"):
+            options["reasoning_effort"] = "none"
     return options
 
 
