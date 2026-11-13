@@ -38,7 +38,7 @@ Initial API responsibility:
 ## Shared Content
 
 - `backend/content/` and `frontend/content/`: identical copies of `profile.json` and `projects.json` (biography, education, experience, skills, project cards). Each Vercel service only sees its own folder, so each carries a copy; a backend test fails if they diverge. The CV text for the twin is read from `backend/content/cv.pdf`; the downloadable CV lives in `frontend/public/cv.pdf`.
-- `content/projects.json`: the three project cards, contribution, stack, status, evidence, privacy constraints, and public links.
+- `content/projects.json`: the four project cards, contribution, stack, status, evidence, privacy constraints, and public links.
 - Both apps consume the same repository content. The backend deployment must package the `content/` directory with its service.
 - Keep confidential Volvo material out of shared content and tests; any demo dataset must be synthetic.
 

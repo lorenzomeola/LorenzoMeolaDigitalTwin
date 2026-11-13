@@ -1,7 +1,7 @@
 {
   "name": "Lorenzo Meola",
   "headline": "AI Product Engineer",
-  "tagline": "I build real products with AI coding agents: I design the solution, guide the agent, then read and validate the Python and React it produces.",
+  "tagline": "I build AI-enabled products and internal tools: I shape the solution, select the model for each task, and review the AI-generated code.",
   "origin": "Colombia",
   "location": "Ghent, Belgium",
   "education": [
@@ -24,9 +24,10 @@
       "company": "Volvo Group",
       "period": "Jan 2026 - Present",
       "highlights": [
-        "Build internal tools and data products for my team by working through Claude Code and Codex, designing and validating the solution rather than writing the code line by line.",
-        "Pick the LLM that fits each task (Claude, OpenAI, Gemini or open source), weighing cost, speed and how much reasoning it needs.",
-        "Develop Python/FastAPI apps and SQL pipelines that turn raw fleet data into something the team can use, reading and validating all the AI-generated code myself."
+        "Build internal tools and data products with Claude Code and Codex, shaping solutions and validating AI-generated code.",
+        "Develop Python/FastAPI apps and SQL pipelines that turn raw fleet data into useful information; select LLMs based on cost, speed and task needs.",
+        "Develop an agentic system with the OpenAI Agents SDK, with the goal of building a complete team of specialized agents to support my team's day-to-day work.",
+        "Design and test agent workflows, using unit tests and repeatable evaluations with the real model to assess behavior and improve reliability."
       ]
     },
     {
@@ -64,7 +65,9 @@
       "items": [
         "Claude Code / Codex / GitHub Copilot",
         "Claude, OpenAI, Gemini & open-source LLMs",
-        "Agentic and AI-assisted workflows",
+        "Agentic AI development & structured outputs",
+        "OpenAI Agents SDK",
+        "Python & React (read, reason, validate)",
         "REST APIs, FastAPI, HTML / JS / CSS",
         "Git & rapid product iteration"
       ]
@@ -75,7 +78,7 @@
     { "name": "Spanish", "level": "C2" },
     { "name": "Italian", "level": "B2" }
   ],
-  "certificates": ["SQL Certification", "IELTS - Level B2 (2018)"],
+  "certificates": ["AI Engineer Agentic Track: The Complete Agent & MCP Course (21 hours), Nov 2026", "SQL Certification", "IELTS - Level B2 (2018)"],
   "careerGoal": "AI Engineer",
   "professionalInterests": [
     "AI engineering and practical applications of AI",

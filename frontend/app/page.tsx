@@ -38,7 +38,7 @@ export default function AboutPage() {
       <section className="profile-strip" aria-label="Profile at a glance">
         <div><p className="strip-label">Current role</p><h2>{current.role}</h2><p>{current.company} / Jan 2026 to present</p></div>
         <div><p className="strip-label">Education</p><h2>{profile.education[0].field}</h2><p>{profile.education[0].institution}</p></div>
-        <div><p className="strip-label">Working with</p><h2>Claude Code, Codex,<br className="hidden sm:block" /> FastAPI, Next.js</h2><p>Python and React: read, reason, validate</p></div>
+        <div><p className="strip-label">Working with</p><h2>Claude Code, Codex,<br className="hidden sm:block" /> OpenAI Agents SDK, FastAPI</h2><p>Python and React: read, reason, validate</p></div>
       </section>
 
       <section className="section-band" aria-labelledby="selected-work-title">
