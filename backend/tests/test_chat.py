@@ -193,7 +193,7 @@ def test_providers_lists_only_configured_providers_without_secrets(monkeypatch):
     assert response.status_code == 200
     body = response.json()
     assert [provider["id"] for provider in body["providers"]] == ["openai", "groq"]
-    assert body["default"] == {"provider": "openai", "model": "gpt-4.1-mini"}
+    assert body["default"] == {"provider": "openai", "model": "gpt-6-luna"}
     assert "secret" not in response.text
 
 
