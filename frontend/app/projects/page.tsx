@@ -10,7 +10,7 @@ export default function ProjectsPage() {
       <p className="eyebrow">Software I work on</p>
       <h1 className="page-title mt-3">Projects</h1>
       <p className="body-copy mt-4 text-[15px]">
-        Internal analytics at Volvo, a directory of AI tools, and a football marketplace.
+        An AI agent system and fleet analytics at Volvo, a directory of AI tools, and a football marketplace.
         My contribution and the current state of each project are listed below.
       </p>
 

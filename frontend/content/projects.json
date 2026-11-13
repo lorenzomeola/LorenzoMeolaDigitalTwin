@@ -1,5 +1,49 @@
 [
   {
+    "slug": "technical-analyst-agent-team",
+    "title": "Technical Analyst Agent Team",
+    "status": "Ongoing - under active development",
+    "statusShort": "In development",
+    "kind": "Professional - Volvo Group",
+    "summary": "Agentic system built with the OpenAI Agents SDK to support my team's day-to-day technical analysis. It starts with one Technical Analyst agent that investigates truck components and diagnostic trouble codes, and the goal is a complete team of specialized agents.",
+    "contribution": "Designing and building the agent, its tools, structured outputs, verification layer and tests, working with AI coding agents and reviewing the code they produce. I also write step-by-step lessons for each stage as I build it.",
+    "contributionConfirmed": true,
+    "technology": [
+      "Python",
+      "OpenAI Agents SDK",
+      "Pydantic",
+      "Structured outputs",
+      "Function tools",
+      "Web search",
+      "Browser automation",
+      "Unit tests"
+    ],
+    "evidence": [
+      "One Technical Analyst agent with ten tools: fleet profile, component and trouble-code lookup, local PDF knowledge search, web search and read-only access to internal service documentation.",
+      "Answers are typed Pydantic outputs: a component technical profile with sourced statements, an investigation plan with step status and evidence, or a technical investigation.",
+      "A verification layer compares the agent's plan with the tool calls that really happened and flags trouble codes that no tool returned.",
+      "Instructions are assembled from separate sections (knowledge sources, evidence rules, planning, fleet context) so each behaviour can be tested on its own.",
+      "More than 200 offline unit tests, plus a manual evaluation script that repeats six scenarios against the real model and reports a pass table.",
+      "Tool use is bounded by budgets for searches, opened documents and reads.",
+      "The project is documented as 25 step-by-step lessons.",
+      "No validated accuracy, time-saving or adoption figures are available, and the multi-agent team is a goal that is not built yet."
+    ],
+    "privacyNotes": [
+      "Do not publish real Volvo data, screenshots, internal system names, internal links or trouble-code details.",
+      "Do not claim the system is deployed to the team or validated in production.",
+      "Do not present the future team of agents as existing; only the single Technical Analyst agent has been built.",
+      "No verified public project link is currently available."
+    ],
+    "highlights": [
+      "One agent that picks its own tools: component data, trouble codes, local PDFs, web search and read-only internal service documentation.",
+      "Typed answers (Pydantic) with sources, plan steps and evidence, so results can be checked instead of trusted.",
+      "A check that compares the plan with the real tool calls and catches trouble codes the tools never returned.",
+      "Offline unit tests plus repeatable evaluations with the real model to measure reliability.",
+      "Built on internal knowledge, so no data, screenshots or results are published here."
+    ],
+    "links": []
+  },
+  {
     "slug": "volvo-cca-fleet-analytics",
     "title": "CCA Fleet Analytics & Predictive Maintenance",
     "status": "Ongoing",
