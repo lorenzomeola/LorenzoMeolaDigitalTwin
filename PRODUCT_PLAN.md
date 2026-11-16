@@ -32,7 +32,7 @@ The initial site is a job-search portfolio, not a services marketplace or genera
 
 1. **CCA Fleet Analytics & Predictive Maintenance** - ongoing Volvo Group work. Describe the analytical backend, REST API, alert simulation and optimization, and exploratory classifiers. Do not expose real Volvo data, screenshots, or internal links. Use synthetic data for any public demonstration. Claim no unvalidated model performance, reduced breakdowns, or savings.
 2. **AI Assets Directory** - live and actively maintained directory. The supplied snapshot listed 170 entries. Describe verified product capabilities and stack, but do not claim Lorenzo's exact role until he confirms it. Date the listing count or derive it dynamically if shown.
-3. **MatchKeeper** - Lorenzo's product, deployed to staging and in release preparation. State that paid Stripe Connect bookings are inactive and sandbox-tested only. Do not claim live payment processing, user adoption, or business impact without evidence.
+3. **MatchKeeper** - Lorenzo's product, live in production as a free beta at matchkeeperuk.com. State that paid Stripe Connect bookings are inactive and sandbox-tested only. Do not claim live payment processing, user adoption, or business impact without evidence.
 4. **Technical Analyst Agent Team** - ongoing Volvo Group work built with the OpenAI Agents SDK. Only one Technical Analyst agent exists; the team of specialized agents is a goal. Describe the tools, typed outputs, verification layer, unit tests and real-model evaluations. Do not expose real Volvo data, screenshots, internal system names or links, and claim no validated accuracy, time savings, adoption or production use.
 
 ## Digital Twin Behavior
