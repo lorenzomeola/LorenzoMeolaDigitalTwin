@@ -130,8 +130,8 @@
   {
     "slug": "matchkeeper",
     "title": "MatchKeeper | London Goalkeeper Marketplace",
-    "status": "Free-beta application deployed to staging and in release preparation",
-    "statusShort": "Free beta - staging",
+    "status": "Free-beta application live in production",
+    "statusShort": "Free beta - live",
     "kind": "Personal product",
     "summary": "Full-stack marketplace connecting amateur football teams and players who need a goalkeeper with freelance goalkeepers available for matches in London.",
     "contribution": "Sole creator and owner. Led the product concept, UX/UI design, technical architecture, and end-to-end development.",
@@ -155,13 +155,13 @@
     "evidence": [
       "Player and goalkeeper dashboards, match creation and discovery, applications, and team selection.",
       "Manually reviewed profiles, in-app chat, maps, calendars, check-in, reviews, match history, and admin moderation.",
-      "Supplied-account checks verified both dashboards and the player calendar on staging; these checks do not establish adoption or business impact.",
+      "The free beta is live in production at matchkeeperuk.com. Supplied-account checks verified both dashboards and the player calendar on staging; these checks do not establish adoption or business impact.",
       "Stripe Connect paid bookings are implemented and sandbox-tested but inactive; no real-money or production-payment verification is available."
     ],
     "privacyNotes": [
       "Do not claim that MatchKeeper processes live payments.",
       "Do not claim broader adoption or business impact without evidence.",
-      "The production domain currently serves an earlier validation landing page."
+      "The app is live in production as a free beta; do not present it as a finished or commercial launch."
     ],
     "highlights": [
       "Role-specific dashboards for players and goalkeepers.",
@@ -170,8 +170,8 @@
       "Paid bookings through Stripe Connect are built and sandbox-tested but switched off; the beta is free."
     ],
     "links": [
-      { "label": "Staging app", "url": "https://staging.matchkeeperuk.com/home" },
-      { "label": "Repository", "url": "https://github.com/lorenzomeola/MatchKeeper/tree/staging" }
+      { "label": "Live beta app", "url": "https://matchkeeperuk.com/home" },
+      { "label": "Repository", "url": "https://github.com/lorenzomeola/MatchKeeper" }
     ]
   }
 ]
