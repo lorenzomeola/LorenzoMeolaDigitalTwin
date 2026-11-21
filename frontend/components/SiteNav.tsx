@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/", label: "About" },
   { href: "/resume", label: "Resume" },
   { href: "/projects", label: "Projects" },
+  { href: "/courses", label: "Courses" },
 ];
 
 export function SiteNav() {
