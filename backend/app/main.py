@@ -44,14 +44,14 @@ PROVIDERS = {
         "key_env": "GROQ_API_KEY",
         "base_url": "https://api.groq.com/openai/v1",
         "token_param": "max_completion_tokens",
-        "models": ["openai/gpt-oss-20b"],
+        "models": ["openai/gpt-oss-20b", "openai/gpt-oss-120b"],
     },
     "openrouter": {
         "label": "OpenRouter",
         "key_env": "OPENROUTER_API_KEY",
         "base_url": "https://openrouter.ai/api/v1",
         "token_param": "max_tokens",
-        "models": ["nvidia/nemotron-3-super-120b-a12b:free", "google/gemma-4-31b-it:free"],
+        "models": ["nvidia/nemotron-3-ultra-550b-a55b:free", "nvidia/nemotron-3.5-lightning:free", "openrouter/free"],
     },
 }
 MAX_REPLY_TOKENS = 2000

@@ -203,7 +203,7 @@ def test_openrouter_only_offers_free_models():
     models = PROVIDERS["openrouter"]["models"]
 
     assert models
-    assert all(model.endswith(":free") for model in models)
+    assert all(model.endswith(":free") or model == "openrouter/free" for model in models)
 
 
 def test_chat_uses_the_selected_provider_and_model(monkeypatch):
