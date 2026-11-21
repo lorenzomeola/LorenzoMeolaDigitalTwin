@@ -152,6 +152,9 @@ svg { flex-shrink: 0; }
 .resume-highlights li + li { margin-top: 7px; }
 .resume-highlights li::marker { color: var(--accent); }
 .project-list { margin-top: 40px; }
+.course-group { margin-top: 56px; }
+.course-category { font-family: var(--font-display); font-size: 28px; font-weight: 600; line-height: 1.2; }
+.course-group .project-list { margin-top: 20px; }
 .project-entry { padding-block: 30px; border-top: 1px solid var(--rule); scroll-margin-top: 92px; }
 .project-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); }
 .project-index { color: var(--accent); }
@@ -159,6 +162,7 @@ svg { flex-shrink: 0; }
 .project-title { margin-top: 18px; max-width: 34ch; font-family: var(--font-display); font-size: 24px; font-weight: 500; line-height: 1.4; text-wrap: balance; }
 .project-contribution { max-width: 75ch; margin-top: 21px; font-size: 14px; line-height: 1.8; }
 .project-highlights { display: grid; gap: 12px 30px; margin-top: 22px; font-size: 14px; line-height: 1.75; color: var(--ink-soft); }
+.project-highlights.is-single-column { grid-template-columns: minmax(0, 1fr); }
 .project-highlights li { position: relative; padding-left: 15px; }
 .project-bullet { position: absolute; width: 4px; height: 4px; background: var(--signal); left: 0; top: 11px; }
 .project-private-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 25px; font-size: 12px; color: var(--ink-soft); }
