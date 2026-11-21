@@ -1,0 +1,122 @@
+[
+  {
+    "slug": "agentic-ai-engineer-agent-mcp",
+    "category": "AI Engineering",
+    "title": "AI Engineer Agentic Track: The Complete Agent & MCP Course",
+    "provider": "Udemy",
+    "instructors": "Ed Donner, Ligency",
+    "status": "completed",
+    "statusShort": "Completed",
+    "completedOn": "Nov 4, 2026",
+    "hours": "21 hours",
+    "summary": "A six-week, hands-on program on designing, building and deploying autonomous AI agents with the main agent frameworks and MCP.",
+    "syllabus": [
+      "Week 1: Agent foundations, design patterns, tool calling, context engineering and the Career Digital Twin",
+      "Week 2: OpenAI Agents SDK",
+      "Week 3: CrewAI",
+      "Week 4: LangGraph",
+      "Week 5: AutoGen",
+      "Week 6: Model Context Protocol (MCP)"
+    ],
+    "projects": [
+      "Career Digital Twin: an agent that represents you to employers",
+      "SDR Agent: agents that write and send sales emails",
+      "Deep Research: a team of agents that researches any topic",
+      "Stock Picker Agent with CrewAI",
+      "4-Agent Engineering Team with CrewAI and coder agents in Docker",
+      "Sidekick: a browser-based Operator-style agent with LangGraph",
+      "Agent Creator: an agent that builds and launches new agents with AutoGen",
+      "Capstone: a Trading Floor of 4 agents using 6 MCP servers and 44 tools"
+    ],
+    "technology": ["OpenAI Agents SDK", "CrewAI", "LangGraph", "AutoGen", "MCP", "Python", "Gradio", "Docker"],
+    "courseUrl": "https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/",
+    "verifyUrl": "https://ude.my/UC-7abf0e22-24e3-4c2b-bc32-7766492b3636",
+    "certificateFile": "/AI_Engineer_Agentic_Track_course_certificate.pdf"
+  },
+  {
+    "slug": "complete-sql-bootcamp",
+    "category": "Coding",
+    "title": "The Complete SQL Bootcamp (30 Hours): Go from Zero to Hero",
+    "provider": "Udemy",
+    "instructors": "Baraa Khatib Salkini",
+    "status": "completed",
+    "statusShort": "Completed",
+    "completedOn": "Mar 9, 2026",
+    "hours": "30 hours",
+    "summary": "A visual, hands-on SQL course from the basics to advanced techniques, built around real enterprise use cases and three practical projects.",
+    "syllabus": [
+      "Introduction to SQL, databases and environment setup (SQL Server, SSMS)",
+      "Querying and filtering: SELECT, WHERE, GROUP BY, HAVING, ORDER BY",
+      "Data definition and manipulation: CREATE, ALTER, DROP, INSERT, UPDATE, DELETE",
+      "Combining data: INNER, LEFT, RIGHT, FULL and CROSS joins, UNION, INTERSECT, EXCEPT",
+      "Row-level functions: string, numeric, date and time, NULL handling and CASE",
+      "Aggregation and window functions: RANK, DENSE_RANK, ROW_NUMBER, LAG, LEAD",
+      "Advanced SQL: subqueries, CTEs (recursive and non-recursive), views, temp tables, stored procedures and triggers",
+      "Performance optimization: indexes, partitions and query tuning",
+      "Using AI tools (ChatGPT, GitHub Copilot) to write, explain and debug SQL"
+    ],
+    "projects": [
+      "SQL Data Warehouse: designing and building a full data warehouse from scratch",
+      "SQL for Data Analysis: exploratory data analysis on real-world datasets",
+      "Advanced Query Optimization: performance tuning on large datasets"
+    ],
+    "technology": ["SQL", "SQL Server", "SSMS", "Window Functions", "CTEs", "Data Warehousing", "Query Optimization"],
+    "courseUrl": "https://www.udemy.com/course/the-complete-sql-bootcamp-30-hours-go-from-zero-to-hero/",
+    "verifyUrl": "https://ude.my/UC-7d858655-cd6b-48ff-aa8a-5a6b717d5729",
+    "certificateFile": "/SQL_certificate.pdf"
+  },
+  {
+    "slug": "complete-python-bootcamp",
+    "category": "Coding",
+    "title": "Complete 2026 Python Bootcamp: Learn Python from Scratch",
+    "provider": "Udemy",
+    "instructors": "Haris Ali Khan (CodeWithHarry)",
+    "status": "in-progress",
+    "statusShort": "In progress",
+    "hours": "17.5 hours",
+    "summary": "A beginner-to-advanced Python course built around hands-on projects, from core language fundamentals to OOP, file handling, external libraries and an AI-powered SaaS project.",
+    "syllabus": [
+      "Introduction to programming and Python: setup, first program and syntax",
+      "Python fundamentals, control flow and loops",
+      "Strings, functions and modules",
+      "Data structures in Python",
+      "Object-oriented programming: classes, objects and inheritance",
+      "Advanced Python concepts",
+      "File I/O and working with files",
+      "Working with external libraries: Flask, Requests and Shutil",
+      "Coding with AI tools such as Cursor and GitHub Copilot"
+    ],
+    "projects": [
+      "Practical projects such as calculators, games and automation scripts",
+      "VidSnapAI: an AI-powered SaaS project using ElevenLabs, FFmpeg and Python",
+      "Full-stack web applications with Flask as the backend"
+    ],
+    "technology": ["Python", "OOP", "Flask", "Requests", "FFmpeg", "ElevenLabs", "Cursor", "GitHub Copilot"],
+    "courseUrl": "https://www.udemy.com/course/codewithharry-python/"
+  },
+  {
+    "slug": "ai-engineer-production-track",
+    "category": "AI Engineering",
+    "title": "AI Engineer Production Track: Deploy LLMs & Agents at Scale",
+    "provider": "Udemy",
+    "instructors": "Ed Donner, Ligency",
+    "status": "in-progress",
+    "statusShort": "In progress",
+    "hours": "18.5 hours",
+    "summary": "A four-week course on taking LLM apps and agents to production: cloud architecture, infrastructure as code, CI/CD, observability and guardrails across Vercel, AWS, Azure and GCP.",
+    "syllabus": [
+      "Week 1: SaaS app live in production with Vercel, AWS, Next.js, Clerk and App Runner",
+      "Week 2: AI platform engineering on AWS with Bedrock, Lambda, API Gateway, Terraform and CI/CD",
+      "Week 3: GenAI in production with Azure, GCP, AWS SageMaker, S3 Vectors and MCP",
+      "Week 4: Agentic AI in production: a multi-agent system on AWS with Aurora Serverless, Lambda, SQS, LangFuse and Bedrock AgentCore"
+    ],
+    "projects": [
+      "SaaS Healthcare App",
+      "Digital Twin Mk II",
+      "Cybersecurity Analyst agent",
+      "Capstone: SaaS Financial Planner"
+    ],
+    "technology": ["AWS", "Azure", "GCP", "Vercel", "Bedrock", "SageMaker", "Terraform", "GitHub Actions", "Next.js", "FastAPI", "MCP", "LangFuse"],
+    "courseUrl": "https://www.udemy.com/course/generative-and-agentic-ai-in-production/"
+  }
+]

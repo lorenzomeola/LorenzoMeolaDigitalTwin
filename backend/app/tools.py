@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 import psycopg
 
-from app.context import EMAIL_PATTERN, PUBLIC_CONTACT_DETAILS
+from app.context import COURSES, EMAIL_PATTERN, PUBLIC_CONTACT_DETAILS
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +94,24 @@ def get_contact_details():
         raise RuntimeError("Public contact details are not configured")
     return {"status": "ok", **PUBLIC_CONTACT_DETAILS}
 
+COURSE_FIELDS = (
+    "title", "category", "provider", "instructors", "status", "completedOn", "hours",
+    "summary", "syllabus", "projects", "technology", "courseUrl", "verifyUrl",
+)
+
+
+def get_courses(status=None, category=None):
+    courses = COURSES
+    if status is not None:
+        if status not in ("completed", "in-progress"):
+            raise ValueError("Invalid status")
+        courses = [course for course in courses if course["status"] == status]
+    if category is not None:
+        courses = [course for course in courses if course["category"].casefold() == str(category).casefold()]
+    return {
+        "status": "ok",
+        "courses": [{field: course[field] for field in COURSE_FIELDS if field in course} for course in courses],
+    }
 
 def _submission_fields(fields, consent_confirmed, visitor_emails, visitor_text):
     if consent_confirmed is not True:
@@ -174,6 +192,17 @@ def get_skills_for_role(role_description, analysis_client=None, visitor_text="")
         raise ValueError("The visitor must provide the role description")
     return analyze_role(role_description, analysis_client)
 
+COURSES_SCHEMA = {
+    "name": "get_courses",
+    "description": "Get the verified list of courses Lorenzo has completed or is taking, with content, links and certificate status. Use when the visitor asks about his courses, training or certificates. Optional filters: status and category. No consent required.",
+    "parameters": {
+        "type": "object", "additionalProperties": False,
+        "properties": {
+            "status": {"type": "string", "enum": ["completed", "in-progress"]},
+            "category": {"type": "string", "enum": ["AI Engineering", "Coding"]},
+        },
+    },
+}
 
 INTERVIEW_SCHEMA = {
     "name": "request_interview",
@@ -206,11 +235,12 @@ ROLE_SCHEMA = {
 WRITE_TOOLS = {"record_user_details", "request_interview", "leave_message"}
 TOOLS = [{"type": "function", "function": schema} for schema in (
     RECORD_USER_DETAILS_SCHEMA, INTERVIEW_SCHEMA, MESSAGE_SCHEMA, CONTACT_SCHEMA, ROLE_SCHEMA,
+    COURSES_SCHEMA,
 )]
 TOOL_MAP = {
     "record_user_details": record_user_details, "request_interview": request_interview,
     "leave_message": leave_message, "get_contact_details": get_contact_details,
-    "get_skills_for_role": get_skills_for_role,
+    "get_skills_for_role": get_skills_for_role, "get_courses": get_courses,
 }
 
 

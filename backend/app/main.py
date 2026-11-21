@@ -113,6 +113,25 @@ SAVE_CONFIRMATIONS = {
     "leave_message": "Your message has been saved for Lorenzo. He will review it and contact you directly.",
 }
 
+def render_courses(result):
+    courses = result["courses"]
+    if not courses:
+        return "I found no courses matching that request."
+    blocks = []
+    for course in courses:
+        state = f"completed {course['completedOn']}" if course["status"] == "completed" else "in progress"
+        lines = [
+            f"**{course['title']}** ({course['provider']}, {course['category']}): {state}, {course['hours']}",
+            course["summary"],
+            f"Course: {course['courseUrl']}",
+        ]
+        if course.get("verifyUrl"):
+            lines.append(f"Certificate: {course['verifyUrl']}")
+        if len(courses) == 1:
+            lines += ["Content:", *[f"- {item}" for item in course["syllabus"]]]
+            lines += ["Projects:", *[f"- {item}" for item in course["projects"]]]
+        blocks.append("\n".join(lines))
+    return "\n\n".join(blocks)
 
 def tool_text(tool_name, result):
     if tool_name in WRITE_TOOLS:
@@ -126,6 +145,8 @@ def tool_text(tool_name, result):
                 "the responsibilities and requirements as plain text."
             )
         return "I couldn't retrieve that information right now. Please try again with the full details."
+    if tool_name == "get_courses":
+        return render_courses(result)
     return f"Lorenzo Meola\n\nEmail: {result['email']}\n\nPhone: {result['phone']}\n\nLocation: {result['location']}"
 
 
@@ -166,6 +187,7 @@ contact_intent = re.compile(
     r"correo|tel[eé]fono|n[uú]mero|llamar|contactar|contatt|telefon|numero|chiamare",
     re.I,
 )
+courses_intent = re.compile(r"course|curso|udemy|certificat|diploma|bootcamp|training|corso|cours\b|formaci", re.I)
 
 app = FastAPI(title="Lorenzo Meola Digital Twin API", version="1.0.0")
 
@@ -274,6 +296,8 @@ def chat(request: ChatRequest, http_request: Request):
                 if call.function.name in seen:
                     continue
                 if call.function.name == "get_contact_details" and not contact_intent.search(request.message):
+                    continue
+                if call.function.name == "get_courses" and not courses_intent.search(visitor_text):
                     continue
                 if call.function.name == "get_skills_for_role" and len(request.message.strip()) < MIN_ROLE_DESCRIPTION_CHARS:
                     continue
