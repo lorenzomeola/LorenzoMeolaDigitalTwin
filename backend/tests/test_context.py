@@ -7,7 +7,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_frontend_and_backend_share_identical_content():
-    for name in ("profile.json", "projects.json"):
+    for name in ("profile.json", "projects.json", "courses.json"):
         backend_copy = json.loads((REPOSITORY_ROOT / "backend" / "content" / name).read_text(encoding="utf-8"))
         frontend_copy = json.loads((REPOSITORY_ROOT / "frontend" / "content" / name).read_text(encoding="utf-8"))
 

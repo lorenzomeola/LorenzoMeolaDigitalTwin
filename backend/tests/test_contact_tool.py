@@ -153,7 +153,16 @@ def test_read_tools_are_available_without_storage_consent():
     schemas = tools.available_tools(consent_confirmed=False, visitor_emails=set())
     names = {schema["function"]["name"] for schema in schemas}
 
-    assert names == {"get_contact_details", "get_skills_for_role"}
+    assert names == {"get_contact_details", "get_skills_for_role", "get_courses"}
+
+
+def test_get_courses_filters_by_status():
+    result = tools.get_courses(status="in-progress")
+
+    assert result["status"] == "ok"
+    assert result["courses"]
+    assert all(course["status"] == "in-progress" for course in result["courses"])
+    assert all("verifyUrl" not in course for course in result["courses"])
 
 
 @pytest.mark.parametrize("tool_name,arguments,table", [

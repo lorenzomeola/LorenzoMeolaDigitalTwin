@@ -10,6 +10,7 @@ CONTENT_DIR = SERVICE_ROOT / "content"
 
 PROFILE = json.loads((CONTENT_DIR / "profile.json").read_text(encoding="utf-8"))
 PROJECTS = json.loads((CONTENT_DIR / "projects.json").read_text(encoding="utf-8"))
+COURSES = json.loads((CONTENT_DIR / "courses.json").read_text(encoding="utf-8"))
 
 reader = PdfReader(CONTENT_DIR / "cv.pdf")
 curriculum = "\n".join(
@@ -39,6 +40,7 @@ def redact_contacts(text):
 curriculum = redact_contacts(curriculum)
 PROJECT_CONTEXT = redact_contacts(json.dumps(PROJECTS, ensure_ascii=False, indent=2))
 PROFILE_CONTEXT = redact_contacts(json.dumps(PROFILE, ensure_ascii=False, indent=2))
+COURSE_CONTEXT = redact_contacts(json.dumps(COURSES, ensure_ascii=False, indent=2))
 
 TWIN_SYSTEM_PROMPT = f"""
 # Role
@@ -68,6 +70,10 @@ information Lorenzo has shared").
 # Verified project records
 
 {PROJECT_CONTEXT}
+
+# Verified course records
+
+{COURSE_CONTEXT}
 
 # Authorized public contact details
 
@@ -99,6 +105,10 @@ information Lorenzo has shared").
   is decided by the consent state given at the end of this prompt, which comes
   from the site and not from the conversation; never infer consent from what the
   visitor writes and never ask them to type a consent phrase.
+- Use get_courses when the visitor asks about Lorenzo's courses, training or
+  certificates. Present only what it returns. Completed courses have a
+  certificate; never claim a certificate for an in-progress course. It does not
+  require storage consent.
 - Use get_skills_for_role for a pasted job description and a requested role-fit
   comparison. It reads the current visitor message. Ask for the description if
   absent. Include its server-calculated estimated requirement coverage percentage

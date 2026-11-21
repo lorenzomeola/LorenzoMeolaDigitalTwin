@@ -56,7 +56,7 @@ def test_chat_returns_model_reply_without_contact_consent(monkeypatch):
     assert response.status_code == 200
     assert response.json() == {"reply": "I build data and AI projects."}
     assert {tool["function"]["name"] for tool in create.call_args.kwargs["tools"]} == {
-        "get_contact_details", "get_skills_for_role",
+        "get_contact_details", "get_skills_for_role", "get_courses",
     }
 
 
@@ -75,7 +75,7 @@ def test_chat_offers_contact_tool_only_after_ui_consent(monkeypatch):
     assert response.status_code == 200
     assert response.json()["reply"] == "Would you like to share your email?"
     assert {tool["function"]["name"] for tool in create.call_args.kwargs["tools"]} == {
-        "record_user_details", "request_interview", "leave_message", "get_contact_details", "get_skills_for_role",
+        "record_user_details", "request_interview", "leave_message", "get_contact_details", "get_skills_for_role", "get_courses",
     }
 
 
@@ -134,7 +134,7 @@ def test_chat_does_not_offer_contact_tool_without_visitor_email(monkeypatch):
 
     assert response.status_code == 200
     assert {tool["function"]["name"] for tool in create.call_args.kwargs["tools"]} == {
-        "get_contact_details", "get_skills_for_role",
+        "get_contact_details", "get_skills_for_role", "get_courses",
     }
 
 
@@ -203,7 +203,7 @@ def test_openrouter_only_offers_free_models():
     models = PROVIDERS["openrouter"]["models"]
 
     assert models
-    assert all(model.endswith(":free") for model in models)
+    assert all(model.endswith(":free") or model == "openrouter/free" for model in models)
 
 
 def test_chat_uses_the_selected_provider_and_model(monkeypatch):
