@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Sora, Instrument_Sans, JetBrains_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { ChatDialog } from "@/components/chat/ChatDialog";
 import { ChatProvider } from "@/components/chat/ChatProvider";
 import { SiteNav } from "@/components/SiteNav";
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </footer>
           <ChatDialog />
         </ChatProvider>
+        <Analytics />
       </body>
     </html>
   );
